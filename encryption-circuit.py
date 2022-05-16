@@ -4,14 +4,14 @@ from typing import List, Optional
 
 
 class Key:
-    def __init__(self, r_restricted_i_bar, theta, u, d, e, H_pa_matrix, H_ec_matrix):
-        self.r_restricted_i_bar = r_restricted_i_bar
+    def __init__(self, theta, r_restricted_i_bar, u, d, e, privacy_amplification_matrix, error_correction_matrix):
         self.theta = theta
+        self.r_restricted_i_bar = r_restricted_i_bar
         self.u = u
         self.d = d
         self.e = e
-        self.H_pa_matrix = H_pa_matrix
-        self.H_ec_matrix = H_ec_matrix
+        self.privacy_amplification_matrix = privacy_amplification_matrix
+        self.error_correction_matrix = error_correction_matrix
 
 
 class GlobalParameters:
@@ -23,6 +23,8 @@ class GlobalParameters:
         self.s = self.calculate_s()
         self.tau = self.calculate_tau()
         self.mu = self.calculate_mu()
+
+    # TODO: implement the below functions
 
     def calculate_n(self):
         return 10
@@ -44,19 +46,39 @@ class GlobalParameters:
 
 
 def generate_key(global_params: GlobalParameters) -> Key:
-    H_pa_matrix = np.random.randint(
+    def generate_basis() -> str:
+        total_length = global_params.m
+        hamming_weight = global_params.k
+        indices_of_ones = set()
+        while len(indices_of_ones) < hamming_weight:
+            indices_of_ones.add(random.randint(0, total_length - 1))
+        return "".join(["1" if i in indices_of_ones else "0" for i in range(total_length)])
+
+    theta = generate_basis()
+    r_restricted_i_bar = random_bit_string(global_params.k)
+    u = random_bit_string(global_params.n)
+    d = random_bit_string(global_params.mu)
+    e = random_bit_string(global_params.tau)
+
+    privacy_amplification_matrix = np.random.randint(
         0, 2, size=(global_params.n, global_params.s))
-    H_ec_matrix = np.random.randint(
+    error_correction_matrix = np.random.randint(
         0, 2, size=(global_params.tau, global_params.n))
+
     return Key(
-        r_restricted_i_bar="01",
-        theta="1001011010",
-        u="110",
-        d="01101",
-        e="",
-        H_pa_matrix=H_pa_matrix,
-        H_ec_matrix=H_ec_matrix,
+        theta=theta,
+        r_restricted_i_bar=r_restricted_i_bar,
+        u=u,
+        d=d,
+        e=e,
+        privacy_amplification_matrix=privacy_amplification_matrix,
+        error_correction_matrix=error_correction_matrix,
     )
+
+
+def random_bit_string(length: int) -> str:
+    return "".join([str(random.randint(0, 1))
+                    for _ in range(length)])
 
 
 def encrypt(msg: str, key: Key, global_params: GlobalParameters):
@@ -66,36 +88,36 @@ def encrypt(msg: str, key: Key, global_params: GlobalParameters):
         len(key.theta)) if key.theta[i] == "0"]
     # there will be s qubits encoded in the computational basis
     # r_restricted_i is now a bit string of length s corresponding to the positions in the index set
-    r_restricted_i = "".join([str(random.randint(0, 1))
-                              for _ in range(global_params.s)])
+    r_restricted_i = random_bit_string(global_params.s)
     print(r_restricted_i)
     # Step 2 - compute x
-    x = hash_pa(key.H_pa_matrix, r_restricted_i)
+    x = calculate_privacy_amplification_hash(
+        key.privacy_amplification_matrix, r_restricted_i)
     print(f"x={x}")
 
     # Step 3 - compute p
-    # p = xor(hash_ec(key.H_ec_matrix, r_restricted_i), key.d)
+    # p = xor(calculate_error_correction_hash(key.error_correction_matrix, r_restricted_i), key.d)
     # print(p)
 
     # Step 4 - compute q
     # q = xor(synd(r_restricted_i), key.e)
 
 
-def hash_pa(matrix: List[List[int]], inp: str) -> str:
+def calculate_privacy_amplification_hash(matrix: List[List[int]], inp: str) -> str:
     # inp is of length s, returns truning of length n
-    return xor_multiply_matrix_with_bitstring(matrix, inp)
+    return xor_multiply_matrix_with_bit_string(matrix, inp)
 
 
-def hash_ec(matrix: List[List[int]], inp: str) -> str:
+def calculate_error_correction_hash(matrix: List[List[int]], inp: str) -> str:
     # inp is of length s, returns string of length tau
-    return xor_multiply_matrix_with_bitstring(matrix, inp)
+    return xor_multiply_matrix_with_bit_string(matrix, inp)
 
 
 def synd(inp: str) -> str:
     pass
 
 
-def xor_multiply_matrix_with_bitstring(matrix: List[List[int]], bit_string: str) -> str:
+def xor_multiply_matrix_with_bit_string(matrix: List[List[int]], bit_string: str) -> str:
     list_to_xor = ["0" * len(matrix)]
     for i in range(len(bit_string)):
         if bit_string[i] == "1":
