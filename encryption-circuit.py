@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from typing import List
+from typing import List, Optional
 
 
 class Key:
@@ -14,11 +14,40 @@ class Key:
         self.H_ec_matrix = H_ec_matrix
 
 
-def generate_key(global_params: dict) -> Key:
+class GlobalParameters:
+    def __init__(self, security_parameter_lambda):
+        self.security_parameter_lambda = security_parameter_lambda
+        self.n = self.calculate_n()
+        self.m = self.calculate_m()
+        self.k = self.calculate_k()
+        self.s = self.calculate_s()
+        self.tau = self.calculate_tau()
+        self.mu = self.calculate_mu()
+
+    def calculate_n(self):
+        return 10
+
+    def calculate_m(self):
+        return 20
+
+    def calculate_k(self):
+        return 10
+
+    def calculate_s(self):
+        return 10
+
+    def calculate_tau(self):
+        return 5
+
+    def calculate_mu(self):
+        return 5
+
+
+def generate_key(global_params: GlobalParameters) -> Key:
     H_pa_matrix = np.random.randint(
-        0, 2, size=(global_params["n"], global_params["s"]))
+        0, 2, size=(global_params.n, global_params.s))
     H_ec_matrix = np.random.randint(
-        0, 2, size=(global_params["tau"], global_params["n"]))
+        0, 2, size=(global_params.tau, global_params.n))
     return Key(
         r_restricted_i_bar="01",
         theta="1001011010",
@@ -30,7 +59,7 @@ def generate_key(global_params: dict) -> Key:
     )
 
 
-def encrypt(msg: str, key: Key, global_params: dict):
+def encrypt(msg: str, key: Key, global_params: GlobalParameters):
     # Step 1 - sample r_restricted_i
     # assuming theta is a bit string
     comp_basis_index_set = [i for i in range(
@@ -38,61 +67,55 @@ def encrypt(msg: str, key: Key, global_params: dict):
     # there will be s qubits encoded in the computational basis
     # r_restricted_i is now a bit string of length s corresponding to the positions in the index set
     r_restricted_i = "".join([str(random.randint(0, 1))
-                              for _ in range(global_params["s"])])
+                              for _ in range(global_params.s)])
     print(r_restricted_i)
     # Step 2 - compute x
     x = hash_pa(key.H_pa_matrix, r_restricted_i)
-    print(x)
+    print(f"x={x}")
 
     # Step 3 - compute p
-    p = xor(hash_ec(key.H_ec_matrix, r_restricted_i), key.d)
-    print(p)
+    # p = xor(hash_ec(key.H_ec_matrix, r_restricted_i), key.d)
+    # print(p)
 
     # Step 4 - compute q
-    q = xor(synd(r_restricted_i), key.e)
+    # q = xor(synd(r_restricted_i), key.e)
 
 
 def hash_pa(matrix: List[List[int]], inp: str) -> str:
     # inp is of length s, returns truning of length n
-    hashResultList = multiply_matrices_mod_2(matrix, [int(ch) for ch in inp])
-    return "".join([str(bit) for bit in hashResultList])
+    return xor_multiply_matrix_with_bitstring(matrix, inp)
 
 
 def hash_ec(matrix: List[List[int]], inp: str) -> str:
     # inp is of length s, returns string of length tau
-    hashResultList = multiply_matrices_mod_2(matrix, [int(ch) for ch in inp])
-    return "".join([str(bit) for bit in hashResultList])
+    return xor_multiply_matrix_with_bitstring(matrix, inp)
 
 
 def synd(inp: str) -> str:
     pass
 
 
-def multiply_matrices_mod_2(A: List[List[int]], B: List[int]) -> List[int]:
-    # A is a x b
-    # B is b x 1
-    # C is a x 1
-    C = np.matmul(A, B)
-    return [x % 2 for x in C]
+def xor_multiply_matrix_with_bitstring(matrix: List[List[int]], bit_string: str) -> str:
+    list_to_xor = ["0" * len(matrix)]
+    for i in range(len(bit_string)):
+        if bit_string[i] == "1":
+            list_to_xor.append("".join(str(digit) for digit in matrix[:, i]))
+    return xor(*list_to_xor)
 
 
-def xor(a: str, b: str) -> None:
-    if not a or not b:
+def xor(*bit_strings: str) -> Optional[str]:
+    if not bit_strings or len(bit_strings) < 2 or not all([len(bit_string) == len(bit_strings[0]) for bit_string in bit_strings]):
         return None
     res = []
-    for chA, chB in zip(a, b):
-        res.append(str(int(chA) ^ int(chB)))
+    for i in range(len(bit_strings[0])):
+        bit = 0
+        for bit_string in bit_strings:
+            bit ^= int(bit_string[i])
+        res.append(str(bit))
     return "".join(res)
 
 
-global_params = {
-    "n": 10,  	# length of the message
-    "m": 20,    # number of qubits sent, == k + s
-    "k": 10,     # length of string used for deletion
-    "s": 10,     # length of string used for extracting randomness
-    "tau": 5,   # length of error correction hash
-    "mu": 5,    # length of error syndrome
-}
+global_params = GlobalParameters(5)
 
 key = generate_key(global_params)
 encrypt("0111010011", key, global_params)
