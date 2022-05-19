@@ -1,5 +1,5 @@
 from utils import random_bit_string, random_bit_matrix, random_int
-from GlobalParameters import GlobalParameters
+from global_parameters import GlobalParameters
 
 
 class Key:

@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Optional
 from utils import random_bit_string
-from GlobalParameters import GlobalParameters
-from Key import Key
+from global_parameters import GlobalParameters
+from key import Key
 
 
 def encrypt(msg: str, key: Key, global_params: GlobalParameters):
