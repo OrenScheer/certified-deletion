@@ -61,6 +61,11 @@ def xor(*bit_strings: str) -> Optional[str]:
     return "".join(res)
 
 
+class EncryptedState:
+    def __init__(self):
+        pass
+
+
 global_params = GlobalParameters(5)
 
 key = Key.generate_key(global_params)
