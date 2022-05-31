@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional
 from utils import random_bit_string
 from global_parameters import GlobalParameters
-from key import Key
+from states import Key
 
 
 def encrypt(msg: str, key: Key, global_params: GlobalParameters):
@@ -59,11 +59,6 @@ def xor(*bit_strings: str) -> Optional[str]:
             bit ^= int(bit_string[i])
         res.append(str(bit))
     return "".join(res)
-
-
-class EncryptedState:
-    def __init__(self):
-        pass
 
 
 global_params = GlobalParameters(5)

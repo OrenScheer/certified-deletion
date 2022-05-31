@@ -42,3 +42,11 @@ class Key:
             privacy_amplification_matrix=privacy_amplification_matrix,
             error_correction_matrix=error_correction_matrix,
         )
+
+
+class Ciphertext:
+    def __init__(self, circuit, c, p, q):
+        self.circuit = circuit
+        self.c = c
+        self.p = p
+        self.q = q
