@@ -1,3 +1,4 @@
+from qiskit import QuantumCircuit
 from utils import random_bit_string, random_bit_matrix, random_int
 from global_parameters import GlobalParameters
 
@@ -45,7 +46,7 @@ class Key:
 
 
 class Ciphertext:
-    def __init__(self, circuit, c, p, q):
+    def __init__(self, circuit: QuantumCircuit, c, p, q):
         self.circuit = circuit
         self.c = c
         self.p = p
