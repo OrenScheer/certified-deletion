@@ -35,6 +35,7 @@ def encrypt(msg: str, key: Key, global_params: GlobalParameters) -> Ciphertext:
 
 
 def prepare_qubits(theta: str, computational_qubit_states: str, hadamard_qubit_states: str) -> QuantumCircuit:
+    # Prepare a circuit with len(theta) qubits, according to the bases in theta and the values specified in the other two strings
     computational_iterator = iter(computational_qubit_states)
     hadamard_iterator = iter(hadamard_qubit_states)
     circuit = QuantumCircuit(len(theta))
@@ -76,6 +77,7 @@ def synd(inp: str) -> None:
 
 
 def xor_multiply_matrix_with_bit_string(matrix: np.ndarray, bit_string: str) -> str:
+    # Multiply a matrix with a bit string using method specified in CW79 (H_3 family of universal-2 hash function)
     list_to_xor = ["0" * len(matrix)]
     for i in range(len(bit_string)):
         if bit_string[i] == "1":
@@ -84,6 +86,7 @@ def xor_multiply_matrix_with_bit_string(matrix: np.ndarray, bit_string: str) -> 
 
 
 def xor(*bit_strings: str) -> str:
+    # Calculate the xor of a variable amount of bit strings
     res = []
     for i in range(len(bit_strings[0])):
         bit = 0

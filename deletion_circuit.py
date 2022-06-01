@@ -1,11 +1,12 @@
-import numpy as np
-from typing import Optional
 from global_parameters import GlobalParameters
 from states import Ciphertext
 from qiskit import QuantumCircuit
+from utils import run_and_measure
 
 
-def delete(cipher: Ciphertext):
-    delete_circuit = cipher.circuit.copy()
-    delete_circuit.h(range(delete_circuit.num_qubits))
-    delete_circuit.measure_all()
+def delete(ciphertext: Ciphertext):
+    deletion_circuit = ciphertext.circuit.copy()
+    deletion_circuit.h(range(deletion_circuit.num_qubits))
+    deletion_circuit.measure_all()
+    proof_of_deletion = run_and_measure(deletion_circuit)
+    return proof_of_deletion
