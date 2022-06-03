@@ -1,6 +1,6 @@
 import numpy as np
 from qiskit import QuantumCircuit, execute
-from qiskit.providers.aer import AerSimulator
+from main import backend, optimization_level
 
 
 def random_bit_string(length: int) -> str:
@@ -21,12 +21,9 @@ def random_int(lower_bound_inclusive: int, upper_bound_inclusive: int) -> int:
     return np.random.randint(lower_bound_inclusive, upper_bound_inclusive + 1)
 
 
-backend = AerSimulator()
-
-
 def run_and_measure(circuit: QuantumCircuit) -> str:
     result = execute(circuit, backend=backend,
-                     optimization_level=1, shots=1).result()
+                     optimization_level=optimization_level, shots=1).result()
     counts = result.get_counts()
     # Reverse the string since the most significant qubit is at the 0th index of the measurement string
     return counts.keys()[0][::-1]

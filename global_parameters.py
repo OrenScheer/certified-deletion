@@ -11,16 +11,16 @@ class GlobalParameters:
     # TODO: implement the below functions
 
     def calculate_n(self):
-        return 10
+        return 1
 
     def calculate_m(self):
-        return 20
+        return 27
 
     def calculate_k(self):
-        return 10
+        return 14
 
     def calculate_s(self):
-        return 10
+        return self.m - self.k
 
     def calculate_tau(self):
         return 5
