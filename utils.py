@@ -1,6 +1,6 @@
 import numpy as np
 from qiskit import QuantumCircuit, execute
-from main import backend, optimization_level
+from qiskit_parameters import backend, optimization_level
 
 
 def random_bit_string(length: int) -> str:

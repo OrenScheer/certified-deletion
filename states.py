@@ -1,17 +1,19 @@
+from dataclasses import dataclass
+import numpy as np
 from qiskit import QuantumCircuit
 from utils import random_bit_string, random_bit_matrix, random_int
 from global_parameters import GlobalParameters
 
 
+@dataclass
 class Key:
-    def __init__(self, theta, r_restricted_i_bar, u, d, e, privacy_amplification_matrix, error_correction_matrix):
-        self.theta = theta
-        self.r_restricted_i_bar = r_restricted_i_bar
-        self.u = u
-        self.d = d
-        self.e = e
-        self.privacy_amplification_matrix = privacy_amplification_matrix
-        self.error_correction_matrix = error_correction_matrix
+    theta: str
+    r_restricted_i_bar: str
+    u: str
+    d: str
+    e: str
+    privacy_amplification_matrix: np.ndarray
+    error_correction_matrix: np.ndarray
 
     @classmethod
     def generate_key(cls, global_params: GlobalParameters):
@@ -45,9 +47,9 @@ class Key:
         )
 
 
+@dataclass
 class Ciphertext:
-    def __init__(self, circuit: QuantumCircuit, c, p, q):
-        self.circuit = circuit
-        self.c = c
-        self.p = p
-        self.q = q
+    circuit: QuantumCircuit
+    c: str
+    p: str
+    q: str
