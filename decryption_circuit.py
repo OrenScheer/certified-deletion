@@ -4,6 +4,7 @@ from utils import run_and_measure
 
 def decrypt(key: Key, ciphertext: Ciphertext):
     decryption_circuit = ciphertext.circuit.copy()
+    decryption_circuit.barrier()
     decryption_circuit.h(
         [i for i in range(decryption_circuit.num_qubits) if key.theta[i] == "1"])
     decryption_circuit.measure_all()
