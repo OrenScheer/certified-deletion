@@ -1,5 +1,5 @@
 import numpy as np
-from utils import random_bit_string
+from utils import random_bit_string, xor
 from global_parameters import GlobalParameters
 from states import Key, Ciphertext
 from qiskit import QuantumCircuit
@@ -13,11 +13,10 @@ def encrypt(msg: str, key: Key, global_params: GlobalParameters) -> Ciphertext:
     # there will be s qubits encoded in the computational basis
     # r_restricted_i is now a bit string of length s corresponding to the positions in the index set
     r_restricted_i = random_bit_string(global_params.s)
-    print(r_restricted_i)
+
     # Step 2 - compute x
     x = calculate_privacy_amplification_hash(
         key.privacy_amplification_matrix, r_restricted_i)
-    print(f"x={x}")
 
     # Step 3 - compute p
     # p = xor(calculate_error_correction_hash(key.error_correction_matrix, r_restricted_i), key.d)
@@ -83,14 +82,3 @@ def xor_multiply_matrix_with_bit_string(matrix: np.ndarray, bit_string: str) -> 
         if bit_string[i] == "1":
             list_to_xor.append("".join(str(digit) for digit in matrix[:, i]))
     return xor(*list_to_xor)
-
-
-def xor(*bit_strings: str) -> str:
-    # Calculate the xor of a variable amount of bit strings
-    res = []
-    for i in range(len(bit_strings[0])):
-        bit = 0
-        for bit_string in bit_strings:
-            bit ^= int(bit_string[i])
-        res.append(str(bit))
-    return "".join(res)
