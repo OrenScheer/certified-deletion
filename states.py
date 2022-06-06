@@ -10,10 +10,6 @@ class Key:
     theta: str
     r_restricted_i_bar: str
     u: str
-    d: str
-    e: str
-    privacy_amplification_matrix: np.ndarray
-    error_correction_matrix: np.ndarray
 
     @classmethod
     def generate_key(cls, global_params: GlobalParameters):
@@ -27,29 +23,16 @@ class Key:
 
         theta = generate_basis()
         r_restricted_i_bar = random_bit_string(global_params.k)
-        u = random_bit_string(global_params.n)
-        d = random_bit_string(global_params.mu)
-        e = random_bit_string(global_params.tau)
-
-        privacy_amplification_matrix = random_bit_matrix(
-            global_params.n, global_params.s)
-        error_correction_matrix = random_bit_matrix(
-            global_params.tau, global_params.n)
+        u = random_bit_string(global_params.co)
 
         return cls(
             theta=theta,
             r_restricted_i_bar=r_restricted_i_bar,
-            u=u,
-            d=d,
-            e=e,
-            privacy_amplification_matrix=privacy_amplification_matrix,
-            error_correction_matrix=error_correction_matrix,
+            u=u
         )
 
 
 @dataclass
 class Ciphertext:
     circuit: QuantumCircuit
-    c: str
-    p: str
-    q: str
+    c: str  # msg ^ r_I ^ u

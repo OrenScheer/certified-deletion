@@ -1,6 +1,6 @@
 from qiskit import QuantumCircuit
+from global_parameters import GlobalParameters
 from states import Key, Ciphertext
-from encryption_circuit import calculate_privacy_amplification_hash
 from utils import xor
 
 
@@ -13,21 +13,17 @@ def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> QuantumCircui
     return decryption_circuit
 
 
-def corr(inp: str, syndrome: str) -> None:
-    pass
-
-
-def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Ciphertext, message: str) -> None:
+def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Ciphertext, message: str, global_params: GlobalParameters) -> None:
     correct_decryption_count = 0
     incorrect_decryption_count = 0
     I_set = set(i for i, basis in enumerate(key.theta) if basis == "0")
     for measurement, count in measurements.items():
         relevant_bits = "".join(
             [ch for i, ch in enumerate(measurement) if i in I_set])
-        x_prime = calculate_privacy_amplification_hash(
-            key.privacy_amplification_matrix, relevant_bits)
-        decrypted_string = xor(ciphertext.c, x_prime, key.u)
-        if decrypted_string == message:
+        decrypted_string = xor(ciphertext.c, relevant_bits, key.u)
+        error_corrected_decrypted_string = global_params.decode_error_correction(
+            decrypted_string)
+        if error_corrected_decrypted_string == message:
             correct_decryption_count += count
         else:
             incorrect_decryption_count += count

@@ -1,29 +1,35 @@
+from utils import encode_three_repetition, decode_three_repetition
+
+
 class GlobalParameters:
     def __init__(self, security_parameter_lambda):
         self.security_parameter_lambda = security_parameter_lambda
         self.n = self.calculate_n()
+        self.co = self.calculate_co()
         self.m = self.calculate_m()
         self.k = self.calculate_k()
         self.s = self.calculate_s()
-        self.tau = self.calculate_tau()
-        self.mu = self.calculate_mu()
+        self.encode_error_correction = encode_three_repetition
+        self.decode_error_correction = decode_three_repetition
 
     # TODO: implement the below functions
 
     def calculate_n(self):
-        return 6
+        # Length of the message
+        return 1
+
+    def calculate_co(self):
+        # Length of the message with error correction encoded
+        return 3
 
     def calculate_m(self):
-        return 15
+        # Number of qubits
+        return 5
 
     def calculate_k(self):
-        return 7
+        # Number of qubits used for deletion
+        return 2
 
     def calculate_s(self):
+        # Number of qubits used for a one-time pad for the message
         return self.m - self.k
-
-    def calculate_tau(self):
-        return 5
-
-    def calculate_mu(self):
-        return 5
