@@ -29,7 +29,6 @@ def encrypt(msg: str, key: Key, global_params: GlobalParameters) -> Ciphertext:
 
     # Step 5 - prepare qubits
     qubits = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
-
     return Ciphertext(qubits, xor(msg, x, key.u), p, q)
 
 

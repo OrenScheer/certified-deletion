@@ -11,13 +11,13 @@ class GlobalParameters:
     # TODO: implement the below functions
 
     def calculate_n(self):
-        return 4
+        return 6
 
     def calculate_m(self):
-        return 26
+        return 15
 
     def calculate_k(self):
-        return 14
+        return 7
 
     def calculate_s(self):
         return self.m - self.k
