@@ -1,5 +1,5 @@
 from qiskit import QuantumCircuit
-from states import Key, Ciphertext
+from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_privacy_amplification_hash
 from utils import xor
 
@@ -9,7 +9,7 @@ def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> QuantumCircui
     decryption_circuit = ciphertext.circuit.copy()
     decryption_circuit.barrier()
     decryption_circuit.h(
-        [i for i in range(decryption_circuit.num_qubits) if key.theta[i] == "1"])
+        [i for i in range(decryption_circuit.num_qubits) if key.theta[i] is Basis.HADAMARD])
     decryption_circuit.measure_all()
     return decryption_circuit
 
@@ -35,7 +35,8 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
     """
     correct_decryption_count = 0
     incorrect_decryption_count = 0
-    I_set = set(i for i, basis in enumerate(key.theta) if basis == "0")
+    I_set = set(i for i, basis in enumerate(key.theta)
+                if basis is Basis.COMPUTATIONAL)
     for measurement, count in measurements.items():
         relevant_bits = "".join(
             [ch for i, ch in enumerate(measurement) if i in I_set])

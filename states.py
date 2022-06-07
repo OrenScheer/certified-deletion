@@ -1,8 +1,15 @@
 from dataclasses import dataclass
+from enum import Enum
+from typing import Tuple
 import numpy as np
 from qiskit import QuantumCircuit
 from utils import random_bit_string, random_bit_matrix, random_int
 from global_parameters import GlobalParameters
+
+
+class Basis(Enum):
+    COMPUTATIONAL = 0
+    HADAMARD = 1
 
 
 @dataclass
@@ -10,8 +17,7 @@ class Key:
     """A key used for encrypting messages.
 
     Attributes:
-        theta: A string that encodes the chosen basis, where a 0 represents a qubit to be encoded
-            in the computational basis, and a 1 represents a qubit to be encoded in the Hadamard basis.
+        theta: A tuple of Basis enum values that encode the chosen basis for each qubit.
         r_restricted_i_bar: A string that encodes the choice of values for the qubits to be prepared
             in the computational basis, where a 0 represents the state |0> and a 1 represents the state |1>. 
             The ith index corresponds to the ith 0 in theta.
@@ -23,7 +29,7 @@ class Key:
         error_correction_matrix: An ndarray containing the matrix values for the specific hash function
             used to verify the correctness of the error correction scheme.
     """
-    theta: str
+    theta: Tuple[Basis]
     r_restricted_i_bar: str
     u: str
     d: str
@@ -34,13 +40,14 @@ class Key:
     @classmethod
     def generate_key(cls, global_params: GlobalParameters):
         """Generates a key according to the global paramaters global_params."""
-        def generate_basis() -> str:
+        def generate_basis() -> Tuple[Basis]:
+            """Generates the basis with which to encode each qubit."""
             total_length = global_params.m
             hamming_weight = global_params.k
             indices_of_ones = set()
             while len(indices_of_ones) < hamming_weight:
                 indices_of_ones.add(random_int(0, total_length - 1))
-            return "".join(["1" if i in indices_of_ones else "0" for i in range(total_length)])
+            return tuple(Basis.HADAMARD if i in indices_of_ones else Basis.COMPUTATIONAL for i in range(total_length))
 
         theta = generate_basis()
         r_restricted_i_bar = random_bit_string(global_params.k)

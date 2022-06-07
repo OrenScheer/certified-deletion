@@ -1,5 +1,5 @@
 from typing import Tuple
-from states import Key
+from states import Basis, Key
 from utils import xor, hamming_weight
 
 
@@ -17,7 +17,7 @@ def verify(key: Key, certificate: str) -> Tuple[bool, int]:
     """
 
     certificate_restricted_i_bar = "".join(
-        [certificate[i] for i, ch in enumerate(key.theta) if ch == "1"])
+        [certificate[i] for i, basis in enumerate(key.theta) if basis is Basis.HADAMARD])
     # TODO: accept the certificate even if it's off by some bits, dependent on a parameter delta
     hamming_distance = hamming_weight(
         xor(key.r_restricted_i_bar, certificate_restricted_i_bar))

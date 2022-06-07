@@ -1,7 +1,8 @@
+from typing import Tuple
 import numpy as np
 from utils import random_bit_string, xor
 from global_parameters import GlobalParameters
-from states import Key, Ciphertext
+from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
 
@@ -28,12 +29,11 @@ def encrypt(message: str, key: Key, global_params: GlobalParameters) -> Cipherte
     return Ciphertext(circuit, xor(message, x, key.u), p, q)
 
 
-def prepare_qubits(theta: str, computational_qubit_states: str, hadamard_qubit_states: str) -> QuantumCircuit:
+def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamard_qubit_states: str) -> QuantumCircuit:
     """Prepares the circuit that encodes all the qubits of a Ciphertext.
 
     Args:
-        theta: A string that encodes the chosen basis, where a 0 represents a qubit to be encoded
-            in the computational basis, and a 1 represents a qubit to be encoded in the Hadamard basis.
+        theta: A tuple of Basis enum values that encode the chosen basis for each qubit.
         computational_qubit_states: A string that encodes the choice of values for the qubits to be prepared,
             where a 0 represents the state |0> and a 1 represents the state |1>. The ith index corresponds
             to the ith 0 in theta.
@@ -49,8 +49,7 @@ def prepare_qubits(theta: str, computational_qubit_states: str, hadamard_qubit_s
     hadamard_iterator = iter(hadamard_qubit_states)
     circuit = QuantumCircuit(len(theta))
     for i, basis in enumerate(theta):
-        if basis == "0":
-            # computational basis
+        if basis is Basis.COMPUTATIONAL:
             state = next(computational_iterator)
             if state == "0":
                 # |0>
@@ -58,8 +57,7 @@ def prepare_qubits(theta: str, computational_qubit_states: str, hadamard_qubit_s
             elif state == "1":
                 # |1>
                 circuit.x(i)
-        elif basis == "1":
-            # Hadamard basis
+        elif basis is Basis.HADAMARD:
             state = next(hadamard_iterator)
             if state == "0":
                 # |+>
@@ -77,7 +75,7 @@ def calculate_privacy_amplification_hash(matrix: np.ndarray, inp: str) -> str:
     Args:
         matrix: An ndarray containing the matrix values for the specific hash function used in privacy amplification.
         inp: A string to be privacy amplified, of length s.
-    
+
     Returns:
         A privacy-amplified string of length n.
     """
