@@ -16,19 +16,19 @@ class GlobalParameters:
 
     def calculate_n(self):
         # Length of the message
-        return 1
+        return 3
 
     def calculate_co(self):
         # Length of the message with error correction encoded
-        return 3
+        return 9
 
     def calculate_m(self):
         # Number of qubits
-        return 5
+        return 15
 
     def calculate_k(self):
         # Number of qubits used for deletion
-        return 2
+        return 6
 
     def calculate_s(self):
         # Number of qubits used for a one-time pad for the message
