@@ -8,28 +8,28 @@ class GlobalParameters:
         self.tau = self.calculate_tau()
         self.mu = self.calculate_mu()
 
-    # TODO: implement the below functions
+    # TODO: implement the below functions, according to the security parameter lambda.
 
     def calculate_n(self):
-        # Length of the message
+        """Returns the length of the message."""
         return 6
 
     def calculate_m(self):
-        # Total number of qubits
+        """Returns the total number of qubits."""
         return 15
 
     def calculate_k(self):
-        # Number of qubits used for deletion
+        """Returns the number of qubits used for deletion."""
         return 7
 
     def calculate_s(self):
-        # Number of qubits used for a one-time pad for the message
+        """Returns the number of qubits used as a one-time pad for encryption."""
         return self.m - self.k
 
     def calculate_tau(self):
-        # Length of error correction hash
+        """Returns the length of the error correction hash."""
         return 5
 
     def calculate_mu(self):
-        # Length of error syndromes
+        """Returns the length of the error syndromes."""
         return 5

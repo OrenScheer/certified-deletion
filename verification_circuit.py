@@ -4,10 +4,20 @@ from utils import xor, hamming_weight
 
 
 def verify(key: Key, certificate: str) -> Tuple[bool, int]:
+    """Verifies an individual certificate agains the expected value according to the key.
+
+    Args:
+        key: The key to be used in the verification circuit.
+        certificate: The candidate proof of deletion as provided by the receiving party.
+
+    Returns:
+        A tuple (verification_passed, hamming_distance) where verification_passed is a bool indicating whether 
+        the candidate certificate has been accepted as a proof of deletion, and hamming_distance is the
+        Hamming distance between the expected deletion certificate and the candidate received.
+    """
+
     certificate_restricted_i_bar = "".join(
         [certificate[i] for i, ch in enumerate(key.theta) if ch == "1"])
-    # print(f"Expected certificate of deletion: {key.r_restricted_i_bar}")
-    # print(f"Received certificate of deletion: {certificate_restricted_i_bar}")
     # TODO: accept the certificate even if it's off by some bits, dependent on a parameter delta
     hamming_distance = hamming_weight(
         xor(key.r_restricted_i_bar, certificate_restricted_i_bar))
@@ -15,6 +25,16 @@ def verify(key: Key, certificate: str) -> Tuple[bool, int]:
 
 
 def verify_deletion_counts(certificates: dict[str, int], key: Key) -> None:
+    """Processes the candidate proof of deletion certificates for a sequence of experimental tests.
+
+    Outputs relevant statistics.
+
+    Args:
+        certificates: A dictionary whose keys are the candidate certificates as provided by
+            the receiving party, and whose values are the number of times that each candidate string
+            has occurred experimentally.
+        key: The key to be used in the verification circuit.
+    """
     accepted_count = 0
     rejected_count = 0
     rejected_string_distances = {}

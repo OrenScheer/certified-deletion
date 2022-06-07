@@ -5,35 +5,46 @@ from states import Key, Ciphertext
 from qiskit import QuantumCircuit
 
 
-def encrypt(msg: str, key: Key, global_params: GlobalParameters) -> Ciphertext:
-    # Step 1 - sample r_restricted_i
-    # assuming theta is a bit string
-    comp_basis_index_set = [i for i in range(
-        len(key.theta)) if key.theta[i] == "0"]
-    # there will be s qubits encoded in the computational basis
-    # r_restricted_i is now a bit string of length s corresponding to the positions in the index set
+def encrypt(message: str, key: Key, global_params: GlobalParameters) -> Ciphertext:
+    """Encrypts a message according to the values specified by a Key, producing a resulting Ciphertext."""
+
+    # Step 1 - sample the values for the qubits to be encoded in the computational basis
     r_restricted_i = random_bit_string(global_params.s)
 
-    # Step 2 - compute x
+    # Step 2 - compute the privacy-amplified one-time pad
     x = calculate_privacy_amplification_hash(
         key.privacy_amplification_matrix, r_restricted_i)
 
-    # Step 3 - compute p
+    # Step 3 - compute the hash of r_restricted_i, for error correction verification
     # p = xor(calculate_error_correction_hash(key.error_correction_matrix, r_restricted_i), key.d)
-    p = "0" * len(msg)
-    # print(p)
+    p = "0" * len(message)
 
-    # Step 4 - compute q
+    # Step 4 - compute the error syndrome of r_restricted_i
     # q = xor(synd(r_restricted_i), key.e)
-    q = "0" * len(msg)
+    q = "0" * len(message)
 
     # Step 5 - prepare qubits
-    qubits = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
-    return Ciphertext(qubits, xor(msg, x, key.u), p, q)
+    circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
+    return Ciphertext(circuit, xor(message, x, key.u), p, q)
 
 
 def prepare_qubits(theta: str, computational_qubit_states: str, hadamard_qubit_states: str) -> QuantumCircuit:
-    # Prepare a circuit with len(theta) qubits, according to the bases in theta and the values specified in the other two strings
+    """Prepares the circuit that encodes all the qubits of a Ciphertext.
+
+    Args:
+        theta: A string that encodes the chosen basis, where a 0 represents a qubit to be encoded
+            in the computational basis, and a 1 represents a qubit to be encoded in the Hadamard basis.
+        computational_qubit_states: A string that encodes the choice of values for the qubits to be prepared,
+            where a 0 represents the state |0> and a 1 represents the state |1>. The ith index corresponds
+            to the ith 0 in theta.
+        hadamard_qubit_states: A string that encodes the chocie of values for the qubits to be prepared,
+            where a 0 represents the state |+> and a 1 represents the state |->. The ith index corresponds
+            to the ith 1 in theta.
+
+    Returns:
+        A QuantumCircuit containing the initialized and prepared qubits. Qubit q_i corresponds to index i
+        in theta.
+    """
     computational_iterator = iter(computational_qubit_states)
     hadamard_iterator = iter(hadamard_qubit_states)
     circuit = QuantumCircuit(len(theta))
@@ -61,21 +72,40 @@ def prepare_qubits(theta: str, computational_qubit_states: str, hadamard_qubit_s
 
 
 def calculate_privacy_amplification_hash(matrix: np.ndarray, inp: str) -> str:
-    # inp is of length s, returns truning of length n
+    """Calculates the privacy amplification of a given input string.
+
+    Args:
+        matrix: An ndarray containing the matrix values for the specific hash function used in privacy amplification.
+        inp: A string to be privacy amplified, of length s.
+    
+    Returns:
+        A privacy-amplified string of length n.
+    """
     return xor_multiply_matrix_with_bit_string(matrix, inp)
 
 
 def calculate_error_correction_hash(matrix: np.ndarray, inp: str) -> str:
+    """Calculates the error correction hash of a given input string.
+
+    Args:
+        matrix: An ndarray containing the matrix values for the specific hash function used to verify
+            the correctness of the error correction scheme.
+        inp: A string to be hashed, of length s.
+
+    Returns:
+        A string of length tau, the hash of the input string.
+    """
     # inp is of length s, returns string of length tau
     return xor_multiply_matrix_with_bit_string(matrix, inp)
 
 
 def synd(inp: str) -> None:
+    """Calculates the error syndromes of a given input string."""
     pass
 
 
 def xor_multiply_matrix_with_bit_string(matrix: np.ndarray, bit_string: str) -> str:
-    # Multiply a matrix with a bit string using method specified in CW79 (H_3 family of universal-2 hash function)
+    """Multiplies a matrix (mod 2) with a bit string, returning a string, as described in family H_3 identified in CW79."""
     list_to_xor = ["0" * len(matrix)]
     for i in range(len(bit_string)):
         if bit_string[i] == "1":

@@ -3,6 +3,14 @@ from qiskit import QuantumCircuit
 
 
 def delete(ciphertext: Ciphertext) -> QuantumCircuit:
+    """Creates the deletion circuit for a given ciphertext.
+
+    Args:
+        ciphertext: A ciphertext containing a QuantumCircuit with the prepared qubits.
+
+    Returns:
+        A new QuantumCircuit that includes the deletion measurements.
+    """
     deletion_circuit = ciphertext.circuit.copy()
     deletion_circuit.barrier()
     deletion_circuit.h(range(deletion_circuit.num_qubits))
