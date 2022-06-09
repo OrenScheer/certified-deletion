@@ -108,7 +108,7 @@ class Ciphertext:
 
     def to_json(self) -> str:
         """Returns a JSON string representing this object."""
-        dictionary = vars(self)
+        dictionary = vars(self).copy()
         dictionary.pop("circuit")
         return json.dumps(dictionary)
 
