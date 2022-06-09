@@ -87,7 +87,7 @@ class Key:
             d=dictionary["d"],
             e=dictionary["e"],
             privacy_amplification_matrix=dictionary["privacy_amplification_matrix"],
-            error_correction_matrix=dictionary["error_correction_matrix"]
+            error_correction_matrix=dictionary["error_correction_matrix"],
         )
 
 
