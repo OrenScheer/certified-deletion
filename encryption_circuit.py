@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 import numpy as np
 from utils import random_bit_string, xor
 from global_parameters import GlobalParameters
@@ -69,7 +69,7 @@ def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamar
     return circuit
 
 
-def calculate_privacy_amplification_hash(matrix: np.ndarray, inp: str) -> str:
+def calculate_privacy_amplification_hash(matrix: List[List[int]], inp: str) -> str:
     """Calculates the privacy amplification of a given input string.
 
     Args:
@@ -82,7 +82,7 @@ def calculate_privacy_amplification_hash(matrix: np.ndarray, inp: str) -> str:
     return xor_multiply_matrix_with_bit_string(matrix, inp)
 
 
-def calculate_error_correction_hash(matrix: np.ndarray, inp: str) -> str:
+def calculate_error_correction_hash(matrix: List[List[int]], inp: str) -> str:
     """Calculates the error correction hash of a given input string.
 
     Args:
@@ -102,10 +102,11 @@ def synd(inp: str) -> None:
     pass
 
 
-def xor_multiply_matrix_with_bit_string(matrix: np.ndarray, bit_string: str) -> str:
+def xor_multiply_matrix_with_bit_string(matrix: List[List[int]], bit_string: str) -> str:
     """Multiplies a matrix (mod 2) with a bit string, returning a string, as described in family H_3 identified in CW79."""
     list_to_xor = ["0" * len(matrix)]
     for i in range(len(bit_string)):
         if bit_string[i] == "1":
-            list_to_xor.append("".join(str(digit) for digit in matrix[:, i]))
+            list_to_xor.append("".join(str(digit)
+                               for digit in [row[i] for row in matrix]))
     return xor(*list_to_xor)

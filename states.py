@@ -1,13 +1,15 @@
 from dataclasses import dataclass
-from enum import Enum
-from typing import Tuple
-import numpy as np
+from enum import IntEnum
+from typing import BinaryIO, List, Optional, Tuple
+from xxlimited import Str
 from qiskit import QuantumCircuit
+from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
 from global_parameters import GlobalParameters
+import json
 
 
-class Basis(Enum):
+class Basis(IntEnum):
     COMPUTATIONAL = 0
     HADAMARD = 1
 
@@ -34,8 +36,8 @@ class Key:
     u: str
     d: str
     e: str
-    privacy_amplification_matrix: np.ndarray
-    error_correction_matrix: np.ndarray
+    privacy_amplification_matrix: List[List[int]]
+    error_correction_matrix: List[List[int]]
 
     @classmethod
     def generate_key(cls, global_params: GlobalParameters):
@@ -70,6 +72,24 @@ class Key:
             error_correction_matrix=error_correction_matrix,
         )
 
+    def to_json(self) -> str:
+        """Returns a JSON string representing this object."""
+        return json.dumps(vars(self))
+
+    @classmethod
+    def from_json(cls, json_string: str):
+        """Returns a Key based on the encoded JSON string."""
+        dictionary = json.loads(json_string)
+        return cls(
+            theta=tuple(Basis(bit) for bit in dictionary["theta"]),
+            r_restricted_i_bar=dictionary["r_restricted_i_bar"],
+            u=dictionary["u"],
+            d=dictionary["d"],
+            e=dictionary["e"],
+            privacy_amplification_matrix=dictionary["privacy_amplification_matrix"],
+            error_correction_matrix=dictionary["error_correction_matrix"]
+        )
+
 
 @dataclass
 class Ciphertext:
@@ -85,3 +105,25 @@ class Ciphertext:
     c: str
     p: str
     q: str
+
+    def to_json(self) -> str:
+        """Returns a JSON string representing this object."""
+        dictionary = vars(self)
+        dictionary.pop("circuit")
+        return json.dumps(dictionary)
+
+    @classmethod
+    def from_json(cls, json_string: str, qpy_filename: Optional[str] = None):
+        """Returns a Ciphertext based on the encoded JSON string."""
+        dictionary = json.loads(json_string)
+        # Placeholder circuit since it may not be needed, for example for decryption verification purposes
+        circuit = QuantumCircuit()
+        if qpy_filename:
+            with open(qpy_filename, "rb") as f:
+                circuit = qpy_serialization.load(f)[0]
+        return cls(
+            circuit=circuit,
+            c=dictionary["c"],
+            p=dictionary["p"],
+            q=dictionary["q"],
+        )
