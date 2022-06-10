@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import BinaryIO, List, Optional, Tuple
-from xxlimited import Str
+from typing import List, Optional, Tuple
 from qiskit import QuantumCircuit
 from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
