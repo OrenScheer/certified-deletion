@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Set, Tuple
 from global_parameters import GlobalParameters
 from states import Basis, Key
 from utils import xor, hamming_weight
@@ -26,7 +26,7 @@ def verify(key: Key, certificate: str, delta: float) -> Tuple[bool, int]:
     return hamming_distance < delta*k, hamming_distance
 
 
-def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params: GlobalParameters) -> None:
+def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params: GlobalParameters) -> Set[str]:
     """Processes the candidate proof of deletion certificates for a sequence of experimental tests.
 
     Outputs relevant statistics.
@@ -37,15 +37,20 @@ def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params
             has occurred experimentally.
         key: The key to be used in the verification circuit.
         global_params: The GlobalParameters of this experiment.
+
+    Returns:
+        A set of strings, where each string is a certificate that was accepted.
     """
     accepted_count = 0
     rejected_count = 0
     rejected_string_distances = {}
+    accepted_certificates = set()
     for certificate, count in certificates.items():
         is_exact_match, distance = verify(
             key, certificate, global_params.delta)
         if is_exact_match:
             accepted_count += count
+            accepted_certificates.add(certificate)
         else:
             rejected_count += count
             rejected_string_distances[distance] = rejected_string_distances.get(
@@ -59,3 +64,4 @@ def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params
         print(f"Out of the {rejected_count} rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:")
         for distance, count in sorted(rejected_string_distances.items()):
             print(f"Hamming distance {distance}: {count}")
+    return accepted_certificates

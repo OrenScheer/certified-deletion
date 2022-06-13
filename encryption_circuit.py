@@ -1,5 +1,4 @@
 from typing import List, Tuple
-import numpy as np
 from utils import random_bit_string, xor
 from global_parameters import GlobalParameters
 from states import Basis, Key, Ciphertext
