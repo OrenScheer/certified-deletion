@@ -29,15 +29,15 @@ class GlobalParameters:
         """Generates a GlobalParameters object based on a security parameter."""
         def calculate_n() -> int:
             """Returns the length of the message."""
-            return 5
+            return 4
 
         def calculate_m() -> int:
             """Returns the total number of qubits."""
-            return 27
+            return 14
 
         def calculate_k() -> int:
             """Returns the number of qubits used for deletion."""
-            return 18
+            return 8
 
         def calculate_s() -> int:
             """Returns the number of qubits used as a one-time pad for encryption."""
@@ -45,7 +45,7 @@ class GlobalParameters:
 
         def calculate_tau() -> int:
             """Returns the length of the error correction hash."""
-            return 5
+            return 3
 
         def calculate_mu() -> int:
             """Returns the length of the error syndromes."""

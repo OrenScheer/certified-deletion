@@ -59,7 +59,7 @@ class Key:
         privacy_amplification_matrix = random_bit_matrix(
             global_params.n, global_params.s)
         error_correction_matrix = random_bit_matrix(
-            global_params.tau, global_params.n)
+            global_params.tau, global_params.s)
 
         return cls(
             theta=theta,

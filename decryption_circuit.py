@@ -1,6 +1,6 @@
 from qiskit import QuantumCircuit
 from states import Basis, Key, Ciphertext
-from encryption_circuit import calculate_privacy_amplification_hash
+from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash
 from utils import xor
 
 
@@ -26,7 +26,7 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
 
     Args:
         measurements: A dictionary whose keys are the measurements of all the qubits by the receiving
-            party once the key is revealed, and whose values are the number of times that each measurement 
+            party once the key is revealed, and whose values are the number of times that each measurement
             string has occurred experimentally.
         key: The key to be used in the decryption circuit.
         ciphertext: The ciphertext that the receiving party possesses.
@@ -35,11 +35,16 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
     """
     correct_decryption_count = 0
     incorrect_decryption_count = 0
+    errored_decryption_count = 0
     I_set = set(i for i, basis in enumerate(key.theta)
                 if basis is Basis.COMPUTATIONAL)
     for measurement, count in measurements.items():
         relevant_bits = "".join(
             [ch for i, ch in enumerate(measurement) if i in I_set])
+        error_corretion_hash = xor(calculate_error_correction_hash(
+            key.error_correction_matrix, relevant_bits), key.d)
+        if error_corretion_hash != ciphertext.p:
+            errored_decryption_count += 1
         x_prime = calculate_privacy_amplification_hash(
             key.privacy_amplification_matrix, relevant_bits)
         decrypted_string = xor(ciphertext.c, x_prime, key.u)
@@ -52,3 +57,5 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
         f"Correct message decrypted: {correct_decryption_count}/{total_count} ({(correct_decryption_count / total_count)*100}%)")
     print(
         f"Incorrect message decrypted: {incorrect_decryption_count}/{total_count} ({(incorrect_decryption_count / total_count)*100}%)")
+    print(
+        f"Error detected during decryption process (hashes didn't match): {errored_decryption_count}/{total_count} ({(errored_decryption_count / total_count)*100}%)")

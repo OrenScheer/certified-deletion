@@ -16,8 +16,9 @@ def encrypt(message: str, key: Key, global_params: GlobalParameters) -> Cipherte
         key.privacy_amplification_matrix, r_restricted_i)
 
     # Step 3 - compute the hash of r_restricted_i, for error correction verification
-    # p = xor(calculate_error_correction_hash(key.error_correction_matrix, r_restricted_i), key.d)
-    p = "0" * len(message)
+    p = xor(calculate_error_correction_hash(
+        key.error_correction_matrix, r_restricted_i), key.d)
+    # p = "0" * len(message)
 
     # Step 4 - compute the error syndrome of r_restricted_i
     # q = xor(synd(r_restricted_i), key.e)
