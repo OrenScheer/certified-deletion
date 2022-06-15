@@ -37,7 +37,7 @@ class GlobalParameters:
 
         def calculate_k() -> int:
             """Returns the number of qubits used for deletion."""
-            return 8
+            return 7
 
         def calculate_s() -> int:
             """Returns the number of qubits used as a one-time pad for encryption."""
@@ -49,7 +49,7 @@ class GlobalParameters:
 
         def calculate_mu() -> int:
             """Returns the length of the error syndromes."""
-            return 5
+            return 3
 
         def calculate_delta() -> float:
             """Returns the threshold rate for the verification check."""

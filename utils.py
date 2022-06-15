@@ -50,6 +50,11 @@ def hamming_weight(s: str) -> int:
     return s.count("1")
 
 
+def hamming_distance(s1: str, s2: str) -> int:
+    """Calculates the Hamming distance between two strings."""
+    return hamming_weight(xor(s1, s2))
+
+
 def export_counts(counts: dict[str, int], csv_filename: str, key_label: str) -> None:
     """Exports a dictionary of counts to a CSV, where the first column is the keys and the second column is the values."""
     df = pd.DataFrame.from_dict(data=counts, orient='index', columns=["Count"]).sort_values(

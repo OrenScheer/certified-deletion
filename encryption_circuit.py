@@ -18,11 +18,9 @@ def encrypt(message: str, key: Key, global_params: GlobalParameters) -> Cipherte
     # Step 3 - compute the hash of r_restricted_i, for error correction verification
     p = xor(calculate_error_correction_hash(
         key.error_correction_matrix, r_restricted_i), key.d)
-    # p = "0" * len(message)
 
     # Step 4 - compute the error syndrome of r_restricted_i
-    # q = xor(synd(r_restricted_i), key.e)
-    q = "0" * len(message)
+    q = xor(synd(r_restricted_i), key.e)
 
     # Step 5 - prepare qubits
     circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
@@ -97,9 +95,14 @@ def calculate_error_correction_hash(matrix: List[List[int]], inp: str) -> str:
     return xor_multiply_matrix_with_bit_string(matrix, inp)
 
 
-def synd(inp: str) -> None:
+def synd(inp: str) -> str:
     """Calculates the error syndromes of a given input string."""
-    pass
+    parity_check_matrix = [
+        [1, 0, 1, 0, 1, 0, 1],
+        [0, 1, 1, 0, 0, 1, 1],
+        [0, 0, 0, 1, 1, 1, 1]
+    ]
+    return xor_multiply_matrix_with_bit_string(parity_check_matrix, inp)
 
 
 def xor_multiply_matrix_with_bit_string(matrix: List[List[int]], bit_string: str) -> str:
