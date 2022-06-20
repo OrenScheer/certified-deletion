@@ -1,7 +1,9 @@
+from typing import List
 from qiskit import QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash, synd
 from utils import xor, hamming_distance
+import itertools
 
 
 def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> QuantumCircuit:
@@ -15,13 +17,9 @@ def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> QuantumCircui
 
 
 def generate_all_binary_strings(n: int):
-    from collections import deque
-    ans = deque(["0", "1"])
-    while len(ans) < 2 ** n:
-        bin_string = ans.popleft()
-        ans.append(bin_string + "0")
-        ans.append(bin_string + "1")
-    return list(ans)
+    import itertools
+    for tup in itertools.product("01", repeat=n):
+        yield "".join(tup)
 
 
 def corr(inp: str, syndrome: str) -> str:
@@ -33,6 +31,20 @@ def corr(inp: str, syndrome: str) -> str:
             if (this_hamming_distance := hamming_distance(inp, binary_string)) < min_hamming_distance:
                 min_hamming_distance = this_hamming_distance
                 ans = binary_string
+    return ans
+
+
+def corr_with_hash(inp: str, syndrome: str, ec_matrix: List[List[int]], ec_hash: str) -> str:
+    """Corrects a candidate input string to match the syndromes and the error correction hash."""
+    min_hamming_distance = float("inf")
+    ans = ""
+    for binary_string in generate_all_binary_strings(len(inp)):
+        if synd(binary_string) == syndrome:
+            if (this_hamming_distance := hamming_distance(inp, binary_string)) < min_hamming_distance:
+                min_hamming_distance = this_hamming_distance
+                ans = binary_string
+            if calculate_error_correction_hash(ec_matrix, binary_string) == ec_hash:
+                return binary_string
     return ans
 
 
@@ -59,8 +71,9 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
         relevant_bits = "".join(
             [ch for i, ch in enumerate(measurement) if i in I_set])
         if error_correct:
-            r_prime = corr(relevant_bits, xor(ciphertext.q, key.e))
-            relevant_bits = r_prime
+            relevant_bits = corr(relevant_bits, xor(ciphertext.q, key.e))
+            # relevant_bits = corr_with_hash(relevant_bits, xor(
+            #     ciphertext.q, key.e), key.error_correction_matrix, xor(ciphertext.p, key.d))
         error_corretion_hash = xor(calculate_error_correction_hash(
             key.error_correction_matrix, relevant_bits), key.d)
         if error_corretion_hash != ciphertext.p:
