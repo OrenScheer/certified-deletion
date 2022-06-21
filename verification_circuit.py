@@ -26,7 +26,7 @@ def verify(key: Key, certificate: str, delta: float) -> Tuple[bool, int]:
     return hamming_distance < delta*k, hamming_distance
 
 
-def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params: GlobalParameters) -> Set[str]:
+def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params: GlobalParameters) -> Tuple[int, int, dict[int, int], Set[str]]:
     """Processes the candidate proof of deletion certificates for a sequence of experimental tests.
 
     Outputs relevant statistics.
@@ -55,13 +55,4 @@ def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params
             rejected_count += count
             rejected_string_distances[distance] = rejected_string_distances.get(
                 distance, 0) + count
-    total_count = accepted_count + rejected_count
-    print(
-        f"Accepted proof of deletion: {accepted_count}/{total_count} ({(accepted_count / total_count)*100}%)")
-    print(
-        f"Rejected proof of deletion: {rejected_count}/{total_count} ({(rejected_count / total_count)*100}%)")
-    if rejected_string_distances:
-        print(f"Out of the {rejected_count} rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:")
-        for distance, count in sorted(rejected_string_distances.items()):
-            print(f"Hamming distance {distance}: {count}")
-    return accepted_certificates
+    return accepted_count, rejected_count, rejected_string_distances, accepted_certificates

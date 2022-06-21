@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from qiskit import QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash, synd
@@ -48,7 +48,7 @@ def corr_with_hash(inp: str, syndrome: str, ec_matrix: List[List[int]], ec_hash:
     return ans
 
 
-def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Ciphertext, message: str, error_correct: bool = False) -> None:
+def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Ciphertext, message: str, error_correct: bool = False) -> Tuple[int, int, int]:
     """Processes and decrypts the candidate decryption measurements for a sequence of experimental tests.
 
     Outputs relevant statistics.
@@ -85,10 +85,4 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
             correct_decryption_count += count
         else:
             incorrect_decryption_count += count
-    total_count = correct_decryption_count + incorrect_decryption_count
-    print(
-        f"Correct message decrypted: {correct_decryption_count}/{total_count} ({(correct_decryption_count / total_count)*100}%)")
-    print(
-        f"Incorrect message decrypted: {incorrect_decryption_count}/{total_count} ({(incorrect_decryption_count / total_count)*100}%)")
-    print(
-        f"Error detected during decryption process (hashes didn't match): {errored_decryption_count}/{total_count} ({(errored_decryption_count / total_count)*100}%)")
+    return correct_decryption_count, incorrect_decryption_count, errored_decryption_count
