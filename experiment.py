@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import json
-from typing import Optional, Tuple
+from typing import Tuple
 from states import Ciphertext, Key
 from global_parameters import GlobalParameters
 from datetime import datetime
@@ -15,6 +15,7 @@ class Experiment:
     execution_datetime: datetime
     execution_shots: int
     backend_system: str
+    microsecond_delay: int
     folder_path: str
     parameters: GlobalParameters
     key: Key
@@ -133,6 +134,7 @@ class Experiment:
                 attributes_dict["execution_datetime"])
             execution_shots = attributes_dict["execution_shots"]
             backend_system = attributes_dict["backend_system"]
+            microsecond_delay = attributes_dict["microsecond_delay"]
         with open(f"{folder_path}/{parameters_filename}", "r") as params_file:
             parameters = GlobalParameters.from_json(params_file.read())
         with open(f"{folder_path}/{key_filename}", "r") as key_file:
@@ -172,6 +174,7 @@ class Experiment:
             decryption_counts_test4=decryption_counts_test4,
             execution_datetime=execution_datetime,
             execution_shots=execution_shots,
+            microsecond_delay=microsecond_delay,
         )
 
 

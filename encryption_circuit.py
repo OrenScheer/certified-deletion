@@ -5,7 +5,7 @@ from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
 
-def encrypt(message: str, key: Key, global_params: GlobalParameters) -> Ciphertext:
+def encrypt(message: str, key: Key, global_params: GlobalParameters, microsecond_delay: int = 0) -> Ciphertext:
     """Encrypts a message according to the values specified by a Key, producing a resulting Ciphertext."""
 
     # Step 1 - sample the values for the qubits to be encoded in the computational basis
@@ -25,6 +25,7 @@ def encrypt(message: str, key: Key, global_params: GlobalParameters) -> Cipherte
 
     # Step 5 - prepare qubits
     circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
+    circuit.delay(microsecond_delay, range(circuit.num_qubits), unit="us")
     return Ciphertext(circuit, xor(message, x, key.u), p, q)
 
 
