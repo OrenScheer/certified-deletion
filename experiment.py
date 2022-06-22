@@ -12,8 +12,10 @@ from verification_circuit import verify_deletion_counts
 @dataclass
 class Experiment:
     experiment_id: str
-    folder_path: str
+    execution_datetime: datetime
+    execution_shots: int
     backend_system: str
+    folder_path: str
     parameters: GlobalParameters
     key: Key
     ciphertext: Ciphertext
@@ -26,12 +28,6 @@ class Experiment:
     raw_counts_test4: dict[str, int]
     deletion_counts_test4: dict[str, int]
     decryption_counts_test4: dict[str, int]
-    execution_datetime: Optional[datetime] = None
-    execution_shots: int = 1000
-
-    def __post_init__(self):
-        if self.execution_datetime is None:
-            self.execution_datetime = datetime.now()
 
     def __str__(self) -> str:
         string_to_return = ""
@@ -39,79 +35,77 @@ class Experiment:
         string_to_return += f"Message length: {self.parameters.n}\n"
         string_to_return += f"Total number of qubits: {self.parameters.m}\n"
         string_to_return += f"Qubits for deletion: {self.parameters.s}\n"
-        string_to_return += f"Qubits used for message encryption: {self.parameters.k}"
+        string_to_return += f"Qubits used for message encryption: {self.parameters.k}\n\n"
 
-        string_to_return += "-----TEST 1: HONEST DELETION-----"
-        # Print Test 1 stats
-        string_to_return += "-----TEST 2: DECRYPTION-----"
-        # Print Test 2 stats
-        string_to_return += "-----TEST 3: HONEST DELETION, THEN DECRYPTION-----"
-        # Print Test 3 stats
-        string_to_return += "-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----"
-        # Print Test 4 stats
+        string_to_return += self.run_test_1() + "\n\n"
+        string_to_return += self.run_test_2() + "\n\n"
+        string_to_return += self.run_test_3() + "\n\n"
+        string_to_return += self.run_test_4()
         return string_to_return
 
-    def run_test_1(self) -> None:
+    def run_test_1(self) -> str:
         """Runs a test of honest deletion."""
-        print("-----TEST 1: HONEST DELETION-----")
-        self.run_deletion_test(self.deletion_counts_test1)
+        output_string = "-----TEST 1: HONEST DELETION-----\n"
+        output_string += self.run_deletion_test(self.deletion_counts_test1)
+        return output_string
 
-    def run_test_2(self) -> None:
+    def run_test_2(self) -> str:
         """Runs a test of decryption."""
-        print("-----TEST 2: DECRYPTION-----")
-        self.run_decryption_test(self.decryption_counts_test2)
+        output_string = "-----TEST 2: DECRYPTION-----\n"
+        output_string += self.run_decryption_test(self.decryption_counts_test2)
+        return output_string
 
-    def run_test_3(self) -> None:
+    def run_test_3(self) -> str:
         """Runs a test of honest deletion, then attempted decryption."""
-        print("-----TEST 3: HONEST DELETION, THEN DECRYPTION-----")
-        self.run_combined_test(
+        output_string = "-----TEST 3: HONEST DELETION, THEN DECRYPTION-----\n"
+        output_string += self.run_combined_test(
             self.raw_counts_test3, self.deletion_counts_test3, self.decryption_counts_test3)
+        return output_string
 
-    def run_test_4(self) -> None:
+    def run_test_4(self) -> str:
         """Runs a test of malicious deletion, then attempted decryption."""
-        print("-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----")
-        self.run_combined_test(
+        output_string = "-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----\n"
+        output_string += self.run_combined_test(
             self.raw_counts_test4, self.deletion_counts_test4, self.decryption_counts_test4)
+        return output_string
 
-    def run_deletion_test(self, deletion_counts: dict[str, int]) -> None:
+    def run_deletion_test(self, deletion_counts: dict[str, int]) -> str:
         accepted_count, rejected_count, rejected_distances, _ = verify_deletion_counts(
             deletion_counts,
             self.key,
             self.parameters
         )
-        self.output_deletion_stats(
-            accepted_count, rejected_count, rejected_distances)
+        return build_deletion_stats(accepted_count, rejected_count, rejected_distances, self.execution_shots)
 
-    def run_decryption_test(self, decryption_counts: dict[str, int]) -> None:
+    def run_decryption_test(self, decryption_counts: dict[str, int]) -> str:
         correct_count, incorrect_count, error_count = decrypt_results(
             decryption_counts,
             self.key,
             self.ciphertext,
             self.message
         )
-        self.output_decryption_stats(
-            correct_count, incorrect_count, error_count)
+        return build_decryption_stats(correct_count, incorrect_count, error_count, self.execution_shots)
 
-    def run_combined_test(self, raw_combined_counts: dict[str, int], deletion_counts: dict[str, int], decryption_counts: dict[str, int]) -> None:
+    def run_combined_test(self, raw_combined_counts: dict[str, int], deletion_counts: dict[str, int], decryption_counts: dict[str, int]) -> str:
+        output_string = ""
         accepted_count, rejected_count, rejected_distances, accepted_certificates = verify_deletion_counts(
             deletion_counts,
             self.key,
             self.parameters
         )
-        self.output_deletion_stats(
-            accepted_count, rejected_count, rejected_distances)
+        output_string += build_deletion_stats(
+            accepted_count, rejected_count, rejected_distances, self.execution_shots)
 
-        print()
         correct_count, incorrect_count, error_count = decrypt_results(
             decryption_counts,
             self.key,
             self.ciphertext,
             self.message
         )
-        self.output_decryption_stats(
-            correct_count, incorrect_count, error_count)
+        output_string += "\n\n" + build_decryption_stats(
+            correct_count, incorrect_count, error_count, self.execution_shots)
 
-        print("\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:")
+        output_string += "\n\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:\n"
 
         accepted_deletion_decryption_counts = {}
         for measurement, count in raw_combined_counts.items():
@@ -126,43 +120,26 @@ class Experiment:
             self.ciphertext,
             self.message
         )
-        self.output_decryption_stats(
-            doubly_correct_count, incorrect_decrypt_only_count, error_decrypt_only_count)
-
-    def output_deletion_stats(self, accepted_count: int, rejected_count: int, rejected_distances: dict[int, int]) -> None:
-        print(
-            f"Accepted proof of deletion: {accepted_count}/{self.execution_shots} ({(accepted_count / self.execution_shots)*100}%)")
-        print(
-            f"Rejected proof of deletion: {rejected_count}/{self.execution_shots} ({(rejected_count / self.execution_shots)*100}%)")
-        if rejected_distances:
-            print(f"Out of the {rejected_count} rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:")
-            for distance, count in sorted(rejected_distances.items()):
-                print(f"Hamming distance {distance}: {count}")
-
-    def output_decryption_stats(self, correct_count: int, incorrect_count: int, error_count: int) -> None:
-        print(
-            f"Correct message decrypted: {correct_count}/{self.execution_shots} ({(correct_count / self.execution_shots)*100}%)")
-        print(
-            f"Incorrect message decrypted: {incorrect_count}/{self.execution_shots} ({(incorrect_count / self.execution_shots)*100}%)")
-        print(
-            f"Error detected during decryption process (hashes didn't match): {error_count}/{self.execution_shots} ({(error_count / self.execution_shots)*100}%)")
+        output_string += build_decryption_stats(doubly_correct_count, incorrect_decrypt_only_count,
+                                                error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
+        return output_string
 
     @classmethod
     def reconstruct_experiment_from_folder(cls, folder_path: str):
-        with open(f"{folder_path}/experiment_attributes.txt", "r") as attributes_file:
+        with open(f"{folder_path}/{experiment_attributes_filename}", "r") as attributes_file:
             attributes_dict = json.loads(attributes_file.read())
             experiment_id = attributes_dict["experiment_id"]
             execution_datetime = datetime.fromisoformat(
                 attributes_dict["execution_datetime"])
             execution_shots = attributes_dict["execution_shots"]
             backend_system = attributes_dict["backend_system"]
-        with open(f"{folder_path}/global_parameters.txt", "r") as params_file:
+        with open(f"{folder_path}/{parameters_filename}", "r") as params_file:
             parameters = GlobalParameters.from_json(params_file.read())
-        with open(f"{folder_path}/key.txt", "r") as key_file:
+        with open(f"{folder_path}/{key_filename}", "r") as key_file:
             key = Key.from_json(key_file.read())
-        with open(f"{folder_path}/ciphertext.txt", "r") as ciphertext_file:
+        with open(f"{folder_path}/{ciphertext_filename}", "r") as ciphertext_file:
             ciphertext = Ciphertext.from_json(ciphertext_file.read())
-        with open(f"{folder_path}/message.txt", "r") as message_file:
+        with open(f"{folder_path}/{message_filename}", "r") as message_file:
             message = message_file.read()
 
         deletion_counts_test1 = import_counts(
@@ -198,6 +175,12 @@ class Experiment:
         )
 
 
+experiment_attributes_filename = "experiment_attributes.txt"
+parameters_filename = "global_parameters.txt"
+key_filename = "key.txt"
+ciphertext_filename = "ciphertext.txt"
+message_filename = "message.txt"
+circuit_filename = "base_circuit.qpy"
 test1_filename = "test1-deletion-counts.csv"
 test2_filename = "test2-decryption-counts.csv"
 test3_filename = "test3-raw-counts.csv"
@@ -228,3 +211,22 @@ def split_counts(raw_counts: dict[str, int]) -> Tuple[dict[str, int], dict[str, 
         decryption_counts[decryption_measurement] = decryption_counts.get(
             decryption_measurement, 0) + count
     return deletion_counts, decryption_counts
+
+
+def build_deletion_stats(accepted_count: int, rejected_count: int, rejected_distances: dict[int, int], total_count: int) -> str:
+    output_string = ""
+    output_string += f"Accepted proof of deletion: {accepted_count}/{total_count} ({(accepted_count / total_count)*100}%)\n"
+    output_string += f"Rejected proof of deletion: {rejected_count}/{total_count} ({(rejected_count / total_count)*100}%)\n"
+    if rejected_distances:
+        output_string += f"Of the {rejected_count} rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:\n"
+        for distance, count in sorted(rejected_distances.items()):
+            output_string += f"  Hamming distance {distance}: {count}\n"
+    return output_string.strip()
+
+
+def build_decryption_stats(correct_count: int, incorrect_count: int, error_count: int, total_count: int) -> str:
+    output_string = ""
+    output_string += f"Correct message decrypted: {correct_count}/{total_count} ({(correct_count / total_count)*100}%)\n"
+    output_string += f"Incorrect message decrypted: {incorrect_count}/{total_count} ({(incorrect_count / total_count)*100}%)\n"
+    output_string += f"Error detected during decryption process (hashes didn't match): {error_count}/{total_count} ({(error_count / total_count)*100}%)\n"
+    return output_string.strip()

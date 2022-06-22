@@ -1,4 +1,3 @@
-from operator import index
 from typing import List
 import numpy as np
 import pandas as pd
@@ -35,23 +34,22 @@ def random_int(lower_bound_inclusive: int, upper_bound_inclusive: int) -> int:
 
 def xor(*bit_strings: str) -> str:
     """Calculates the xor of a variable number of bit strings."""
-    # Calculate the xor of a variable amount of bit strings
     res = []
-    for i in range(len(bit_strings[0])):
-        bit = 0
-        for bit_string in bit_strings:
-            bit ^= int(bit_string[i])
-        res.append(str(bit))
+    for position in zip(*bit_strings):
+        bit_result = 0
+        for bit in position:
+            bit_result ^= int(bit)
+        res.append(str(bit_result))
     return "".join(res)
 
 
 def hamming_weight(s: str) -> int:
-    """Calculates the Hamming weight of a given string."""
+    """Calculates the Hamming weight of a given bit string."""
     return s.count("1")
 
 
 def hamming_distance(s1: str, s2: str) -> int:
-    """Calculates the Hamming distance between two strings."""
+    """Calculates the Hamming distance between two bit strings."""
     return hamming_weight(xor(s1, s2))
 
 
