@@ -44,6 +44,19 @@ class Experiment:
         string_to_return += self.run_test_4()
         return string_to_return
 
+    def get_test1_success_rate(self) -> float:
+        accepted_count, _, _, _ = verify_deletion_counts(
+            self.deletion_counts_test1,
+            self.key,
+            self.parameters
+        )
+        return accepted_count / self.execution_shots
+
+    def get_test2_success_rate(self) -> float:
+        decryption_count, _, _ = decrypt_results(
+            self.decryption_counts_test2, self.key, self.ciphertext, self.message)
+        return decryption_count / self.execution_shots
+
     def run_test_1(self) -> str:
         """Runs a test of honest deletion."""
         output_string = "-----TEST 1: HONEST DELETION-----\n"
@@ -106,23 +119,24 @@ class Experiment:
         output_string += "\n\n" + build_decryption_stats(
             correct_count, incorrect_count, error_count, self.execution_shots)
 
-        output_string += "\n\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:\n"
+        if accepted_count:
+            output_string += "\n\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:\n"
 
-        accepted_deletion_decryption_counts = {}
-        for measurement, count in raw_combined_counts.items():
-            deletion_measurement, decryption_measurement = measurement.split(
-                " ")
-            if deletion_measurement in accepted_certificates:
-                accepted_deletion_decryption_counts[decryption_measurement] = accepted_deletion_decryption_counts.get(
-                    decryption_measurement, 0) + count
-        doubly_correct_count, incorrect_decrypt_only_count, error_decrypt_only_count = decrypt_results(
-            accepted_deletion_decryption_counts,
-            self.key,
-            self.ciphertext,
-            self.message
-        )
-        output_string += build_decryption_stats(doubly_correct_count, incorrect_decrypt_only_count,
-                                                error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
+            accepted_deletion_decryption_counts = {}
+            for measurement, count in raw_combined_counts.items():
+                deletion_measurement, decryption_measurement = measurement.split(
+                    " ")
+                if deletion_measurement in accepted_certificates:
+                    accepted_deletion_decryption_counts[decryption_measurement] = accepted_deletion_decryption_counts.get(
+                        decryption_measurement, 0) + count
+            doubly_correct_count, incorrect_decrypt_only_count, error_decrypt_only_count = decrypt_results(
+                accepted_deletion_decryption_counts,
+                self.key,
+                self.ciphertext,
+                self.message
+            )
+            output_string += build_decryption_stats(doubly_correct_count, incorrect_decrypt_only_count,
+                                                    error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
         return output_string
 
     @classmethod
@@ -140,7 +154,8 @@ class Experiment:
         with open(f"{folder_path}/{key_filename}", "r") as key_file:
             key = Key.from_json(key_file.read())
         with open(f"{folder_path}/{ciphertext_filename}", "r") as ciphertext_file:
-            ciphertext = Ciphertext.from_json(ciphertext_file.read())
+            ciphertext = Ciphertext.from_json(
+                ciphertext_file.read(), qpy_filename=f"{folder_path}/{circuit_filename}")
         with open(f"{folder_path}/{message_filename}", "r") as message_file:
             message = message_file.read()
 
