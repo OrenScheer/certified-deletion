@@ -299,8 +299,11 @@ def export_counts(counts: dict[str, int], csv_filename: str, key_label: str) -> 
 
 def import_counts(csv_filename: str) -> dict[str, int]:
     """Imports a dictionary of counts from a CSV file, where the first column is the keys and the second column is the values."""
-    df = pd.read_csv(csv_filename, dtype=str)
-    key_label, value_label = df.columns
-    df.set_index(key_label, inplace=True)
-    df[value_label] = df[value_label].astype(int)
-    return df.to_dict()[value_label]
+    try:
+        df = pd.read_csv(csv_filename, dtype=str)
+        key_label, value_label = df.columns
+        df.set_index(key_label, inplace=True)
+        df[value_label] = df[value_label].astype(int)
+        return df.to_dict()[value_label]
+    except FileNotFoundError:
+        return {}
