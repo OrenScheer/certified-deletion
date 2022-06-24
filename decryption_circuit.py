@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from qiskit import QuantumCircuit
+from qiskit import ClassicalRegister, QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash, synd
 from utils import xor, hamming_distance
@@ -16,8 +16,19 @@ def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> QuantumCircui
     return decryption_circuit
 
 
+def create_decryption_circuit_for_deletion(key: Key, ciphertext: Ciphertext) -> QuantumCircuit:
+    """Creates and returns a decryption circuit where the deletion qubits are preserved, given a Ciphertext and Key."""
+    decryption_circuit = ciphertext.circuit.copy()
+    decryption_circuit.barrier()
+    classical_register = ClassicalRegister(
+        key.theta.count(Basis.COMPUTATIONAL))
+    decryption_circuit.add_register(classical_register)
+    decryption_circuit.measure([i for i in range(
+        decryption_circuit.num_qubits) if key.theta[i] is Basis.COMPUTATIONAL], classical_register)
+    return decryption_circuit
+
+
 def generate_all_binary_strings(n: int):
-    import itertools
     for tup in itertools.product("01", repeat=n):
         yield "".join(tup)
 
@@ -65,11 +76,14 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
     correct_decryption_count = 0
     incorrect_decryption_count = 0
     errored_decryption_count = 0
-    I_set = set(i for i, basis in enumerate(key.theta)
-                if basis is Basis.COMPUTATIONAL)
     for measurement, count in measurements.items():
-        relevant_bits = "".join(
-            [ch for i, ch in enumerate(measurement) if i in I_set])
+        if len(measurement) == key.theta.count(Basis.COMPUTATIONAL):
+            # Only the computational basis qubits were measured
+            relevant_bits = measurement
+        else:
+            # All the qubits were measured
+            relevant_bits = "".join(
+                [ch for i, ch in enumerate(measurement) if key.theta[i] is Basis.COMPUTATIONAL])
         if error_correct:
             relevant_bits = corr(relevant_bits, xor(ciphertext.q, key.e))
             # relevant_bits = corr_with_hash(relevant_bits, xor(

@@ -1,6 +1,5 @@
 from typing import List
 import numpy as np
-import pandas as pd
 
 
 def random_bit_string(length: int) -> str:
@@ -51,20 +50,3 @@ def hamming_weight(s: str) -> int:
 def hamming_distance(s1: str, s2: str) -> int:
     """Calculates the Hamming distance between two bit strings."""
     return hamming_weight(xor(s1, s2))
-
-
-def export_counts(counts: dict[str, int], csv_filename: str, key_label: str) -> None:
-    """Exports a dictionary of counts to a CSV, where the first column is the keys and the second column is the values."""
-    df = pd.DataFrame.from_dict(data=counts, orient='index', columns=["Count"]).sort_values(
-        by="Count", ascending=False)
-    df.index.rename(key_label, inplace=True)
-    df.to_csv(csv_filename)
-
-
-def import_counts(csv_filename: str) -> dict[str, int]:
-    """Imports a dictionary of counts from a CSV file, where the first column is the keys and the second column is the values."""
-    df = pd.read_csv(csv_filename, dtype=str)
-    key_label, value_label = df.columns
-    df.set_index(key_label, inplace=True)
-    df[value_label] = df[value_label].astype(int)
-    return df.to_dict()[value_label]

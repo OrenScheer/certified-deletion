@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 import json
+import pandas as pd
 from typing import Tuple
 from states import Ciphertext, Key
 from global_parameters import GlobalParameters
 from datetime import datetime
 from decryption_circuit import decrypt_results
-from utils import import_counts
 from verification_circuit import verify_deletion_counts
 
 
@@ -29,6 +29,9 @@ class Experiment:
     raw_counts_test4: dict[str, int]
     deletion_counts_test4: dict[str, int]
     decryption_counts_test4: dict[str, int]
+    raw_counts_test5: dict[str, int]
+    decryption_counts_test5: dict[str, int]
+    deletion_counts_test5: dict[str, int]
 
     def __str__(self) -> str:
         string_to_return = ""
@@ -41,7 +44,8 @@ class Experiment:
         string_to_return += self.run_test_1() + "\n\n"
         string_to_return += self.run_test_2() + "\n\n"
         string_to_return += self.run_test_3() + "\n\n"
-        string_to_return += self.run_test_4()
+        string_to_return += self.run_test_4() + "\n\n"
+        string_to_return += self.run_test_5()
         return string_to_return
 
     def get_test1_success_rate(self) -> float:
@@ -81,6 +85,13 @@ class Experiment:
         output_string = "-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----\n"
         output_string += self.run_combined_test(
             self.raw_counts_test4, self.deletion_counts_test4, self.decryption_counts_test4)
+        return output_string
+
+    def run_test_5(self) -> str:
+        """Runs a test of tamper-detection."""
+        output_string = "-----TEST 5: TAMPER DETECTION-----\n"
+        output_string += self.run_combined_flipped_test(
+            self.decryption_counts_test5, self.deletion_counts_test5)
         return output_string
 
     def run_deletion_test(self, deletion_counts: dict[str, int]) -> str:
@@ -139,6 +150,27 @@ class Experiment:
                                                     error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
         return output_string
 
+    def run_combined_flipped_test(self, decryption_counts: dict[str, int], deletion_counts: dict[str, int]) -> str:
+        output_string = ""
+        correct_count, incorrect_count, error_count = decrypt_results(
+            decryption_counts,
+            self.key,
+            self.ciphertext,
+            self.message
+        )
+        output_string += build_decryption_stats(
+            correct_count, incorrect_count, error_count, self.execution_shots)
+
+        accepted_count, rejected_count, rejected_distances, _ = verify_deletion_counts(
+            deletion_counts,
+            self.key,
+            self.parameters
+        )
+        output_string += "\n\n" + build_deletion_stats(
+            accepted_count, rejected_count, rejected_distances, self.execution_shots)
+
+        return output_string
+
     @classmethod
     def reconstruct_experiment_from_folder(cls, folder_path: str):
         with open(f"{folder_path}/{experiment_attributes_filename}", "r") as attributes_file:
@@ -165,11 +197,14 @@ class Experiment:
             f"{folder_path}/{test2_filename}")
         raw_counts_test3 = import_counts(f"{folder_path}/{test3_filename}")
         raw_counts_test4 = import_counts(f"{folder_path}/{test4_filename}")
+        raw_counts_test5 = import_counts(f"{folder_path}/{test5_filename}")
 
         deletion_counts_test3, decryption_counts_test3 = split_counts(
             raw_counts_test3)
         deletion_counts_test4, decryption_counts_test4 = split_counts(
             raw_counts_test4)
+        decryption_counts_test5, deletion_counts_test5 = split_counts(
+            raw_counts_test5)
 
         return cls(
             experiment_id=experiment_id,
@@ -187,6 +222,9 @@ class Experiment:
             raw_counts_test4=raw_counts_test4,
             deletion_counts_test4=deletion_counts_test4,
             decryption_counts_test4=decryption_counts_test4,
+            raw_counts_test5=raw_counts_test5,
+            decryption_counts_test5=decryption_counts_test5,
+            deletion_counts_test5=deletion_counts_test5,
             execution_datetime=execution_datetime,
             execution_shots=execution_shots,
             microsecond_delay=microsecond_delay,
@@ -203,6 +241,7 @@ test1_filename = "test1-deletion-counts.csv"
 test2_filename = "test2-decryption-counts.csv"
 test3_filename = "test3-raw-counts.csv"
 test4_filename = "test4-raw-counts.csv"
+test5_filename = "test5-raw-counts.csv"
 
 
 def split_counts(raw_counts: dict[str, int]) -> Tuple[dict[str, int], dict[str, int]]:
@@ -214,21 +253,21 @@ def split_counts(raw_counts: dict[str, int]) -> Tuple[dict[str, int], dict[str, 
             and whose values are the number of occurrences of each concatenated string result.
 
     Returns:
-        A tuple of two dictionaries, where the first dictionary is the counts of each unique deletion string,
-        and the second dictionary is the counts of each unique decryption string.
+        A tuple of two dictionaries, where the first dictionary is the counts of each unique first measurement string,
+        and the second dictionary is the counts of each unique second measurement string.
     """
-    deletion_counts = {}
-    decryption_counts = {}
+    first_measurement_counts = {}
+    second_measurement_counts = {}
     for measurement, count in raw_counts.items():
         # Qiskit will return a space-separated string of the two measurements.
         # run_and_measure will reverse the string so that the first substring is the first measurement.
         deletion_measurement, decryption_measurement = measurement.split(
             " ")
-        deletion_counts[deletion_measurement] = deletion_counts.get(
+        first_measurement_counts[deletion_measurement] = first_measurement_counts.get(
             deletion_measurement, 0) + count
-        decryption_counts[decryption_measurement] = decryption_counts.get(
+        second_measurement_counts[decryption_measurement] = second_measurement_counts.get(
             decryption_measurement, 0) + count
-    return deletion_counts, decryption_counts
+    return first_measurement_counts, second_measurement_counts
 
 
 def build_deletion_stats(accepted_count: int, rejected_count: int, rejected_distances: dict[int, int], total_count: int) -> str:
@@ -248,3 +287,20 @@ def build_decryption_stats(correct_count: int, incorrect_count: int, error_count
     output_string += f"Incorrect message decrypted: {incorrect_count}/{total_count} ({(incorrect_count / total_count)*100}%)\n"
     output_string += f"Error detected during decryption process (hashes didn't match): {error_count}/{total_count} ({(error_count / total_count)*100}%)\n"
     return output_string.strip()
+
+
+def export_counts(counts: dict[str, int], csv_filename: str, key_label: str) -> None:
+    """Exports a dictionary of counts to a CSV, where the first column is the keys and the second column is the values."""
+    df = pd.DataFrame.from_dict(data=counts, orient='index', columns=["Count"]).sort_values(
+        by="Count", ascending=False)
+    df.index.rename(key_label, inplace=True)
+    df.to_csv(csv_filename)
+
+
+def import_counts(csv_filename: str) -> dict[str, int]:
+    """Imports a dictionary of counts from a CSV file, where the first column is the keys and the second column is the values."""
+    df = pd.read_csv(csv_filename, dtype=str)
+    key_label, value_label = df.columns
+    df.set_index(key_label, inplace=True)
+    df[value_label] = df[value_label].astype(int)
+    return df.to_dict()[value_label]
