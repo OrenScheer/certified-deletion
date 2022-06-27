@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
+import os
 import pandas as pd
 from typing import Tuple
 from states import Ciphertext, Key
@@ -7,6 +8,7 @@ from global_parameters import GlobalParameters
 from datetime import datetime
 from decryption_circuit import decrypt_results
 from verification_circuit import verify_deletion_counts
+from qiskit.circuit import qpy_serialization
 
 
 @dataclass
@@ -24,29 +26,40 @@ class Experiment:
     deletion_counts_test1: dict[str, int]
     decryption_counts_test2: dict[str, int]
     raw_counts_test3: dict[str, int]
-    deletion_counts_test3: dict[str, int]
-    decryption_counts_test3: dict[str, int]
+    deletion_counts_test3: dict[str, int] = field(init=False)
+    decryption_counts_test3: dict[str, int] = field(init=False)
     raw_counts_test4: dict[str, int]
-    deletion_counts_test4: dict[str, int]
-    decryption_counts_test4: dict[str, int]
+    deletion_counts_test4: dict[str, int] = field(init=False)
+    decryption_counts_test4: dict[str, int] = field(init=False)
     raw_counts_test5: dict[str, int]
-    decryption_counts_test5: dict[str, int]
-    deletion_counts_test5: dict[str, int]
+    decryption_counts_test5: dict[str, int] = field(init=False)
+    deletion_counts_test5: dict[str, int] = field(init=False)
+
+    def __post_init__(self):
+        self.deletion_counts_test3, self.decryption_counts_test3 = split_counts(
+            self.raw_counts_test3)
+        self.deletion_counts_test4, self.decryption_counts_test4 = split_counts(
+            self.raw_counts_test4)
+        self.decryption_counts_test5, self.deletion_counts_test5 = split_counts(
+            self.raw_counts_test5)
 
     def __str__(self) -> str:
-        string_to_return = ""
-        string_to_return += f"{self.backend_system}\n\n"
-        string_to_return += f"Message length: {self.parameters.n}\n"
-        string_to_return += f"Total number of qubits: {self.parameters.m}\n"
-        string_to_return += f"Qubits for deletion: {self.parameters.s}\n"
-        string_to_return += f"Qubits used for message encryption: {self.parameters.k}\n\n"
+        output_string = self.get_experiment_info()
+        output_string += self.run_test_1() + "\n\n"
+        output_string += self.run_test_2() + "\n\n"
+        output_string += self.run_test_3() + "\n\n"
+        output_string += self.run_test_4() + "\n\n"
+        output_string += self.run_test_5()
+        return output_string
 
-        string_to_return += self.run_test_1() + "\n\n"
-        string_to_return += self.run_test_2() + "\n\n"
-        string_to_return += self.run_test_3() + "\n\n"
-        string_to_return += self.run_test_4() + "\n\n"
-        string_to_return += self.run_test_5()
-        return string_to_return
+    def get_experiment_info(self) -> str:
+        output_string = f"System: {self.backend_system}"
+        output_string += f"Message length: {self.parameters.n}"
+        output_string += f"Total number of qubits: {self.parameters.m}"
+        output_string += f"Qubits for deletion: {self.parameters.k}"
+        output_string += f"Qubits used for message encryption: {self.parameters.s}"
+        output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} μs"
+        return output_string
 
     def get_test1_success_rate(self) -> float:
         accepted_count, _, _, _ = verify_deletion_counts(
@@ -171,6 +184,48 @@ class Experiment:
 
         return output_string
 
+    def export_to_folder(self):
+        os.makedirs(self.folder_path, exist_ok=True)
+        with open(f"{self.folder_path}/{experiment_attributes_filename}", "w") as f:
+            f.write(json.dumps({
+                "experiment_id": self.experiment_id,
+                "execution_datetime": self.execution_datetime.isoformat(),
+                "execution_shots": self.execution_shots,
+                "backend_system": self.backend_system,
+                "folder_path": self.folder_path,
+                "microsecond_delay": self.microsecond_delay,
+            }))
+
+        with open(f"{self.folder_path}/{parameters_filename}", "w") as f:
+            f.write(self.parameters.to_json())
+
+        with open(f"{self.folder_path}/{key_filename}", "w") as f:
+            f.write(self.key.to_json())
+
+        with open(f"{self.folder_path}/{ciphertext_filename}", "w") as f:
+            f.write(self.ciphertext.to_json())
+
+        with open(f"{self.folder_path}/{message_filename}", "w") as f:
+            f.write(self.message)
+
+        with open(f"{self.folder_path}/{circuit_filename}", "wb") as f:
+            # We assume that the ciphertext circuit is always reset before calling this method
+            qpy_serialization.dump(self.ciphertext.circuit, f)
+
+        export_counts(self.deletion_counts_test1,
+                      csv_filename=f"{self.folder_path}/{test1_filename}", key_label="Deletion measurement")
+        export_counts(self.decryption_counts_test2,
+                      csv_filename=f"{self.folder_path}/{test2_filename}", key_label="Decryption measurement")
+        export_counts(self.raw_counts_test3,
+                      csv_filename=f"{self.folder_path}/{test3_filename}", key_label="Measurement")
+        export_counts(self.raw_counts_test4,
+                      csv_filename=f"{self.folder_path}/{test4_filename}", key_label="Measurement")
+        export_counts(self.raw_counts_test5,
+                      csv_filename=f"{self.folder_path}/{test5_filename}", key_label="Measurement")
+
+        with open(f"{self.folder_path}/{results_filename}", "w") as f:
+            f.write(str(self))
+
     @classmethod
     def reconstruct_experiment_from_folder(cls, folder_path: str):
         with open(f"{folder_path}/{experiment_attributes_filename}", "r") as attributes_file:
@@ -199,13 +254,6 @@ class Experiment:
         raw_counts_test4 = import_counts(f"{folder_path}/{test4_filename}")
         raw_counts_test5 = import_counts(f"{folder_path}/{test5_filename}")
 
-        deletion_counts_test3, decryption_counts_test3 = split_counts(
-            raw_counts_test3)
-        deletion_counts_test4, decryption_counts_test4 = split_counts(
-            raw_counts_test4)
-        decryption_counts_test5, deletion_counts_test5 = split_counts(
-            raw_counts_test5)
-
         return cls(
             experiment_id=experiment_id,
             folder_path=folder_path,
@@ -217,14 +265,8 @@ class Experiment:
             deletion_counts_test1=deletion_counts_test1,
             decryption_counts_test2=decryption_counts_test2,
             raw_counts_test3=raw_counts_test3,
-            deletion_counts_test3=deletion_counts_test3,
-            decryption_counts_test3=decryption_counts_test3,
             raw_counts_test4=raw_counts_test4,
-            deletion_counts_test4=deletion_counts_test4,
-            decryption_counts_test4=decryption_counts_test4,
             raw_counts_test5=raw_counts_test5,
-            decryption_counts_test5=decryption_counts_test5,
-            deletion_counts_test5=deletion_counts_test5,
             execution_datetime=execution_datetime,
             execution_shots=execution_shots,
             microsecond_delay=microsecond_delay,
@@ -242,6 +284,7 @@ test2_filename = "test2-decryption-counts.csv"
 test3_filename = "test3-raw-counts.csv"
 test4_filename = "test4-raw-counts.csv"
 test5_filename = "test5-raw-counts.csv"
+results_filename = "results.txt"
 
 
 def split_counts(raw_counts: dict[str, int]) -> Tuple[dict[str, int], dict[str, int]]:
