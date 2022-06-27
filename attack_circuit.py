@@ -1,9 +1,12 @@
+"""Circuits used by the receiving party to maliciously attempt to break the certified deletion."""
+
 from qiskit import QuantumCircuit
 from states import Ciphertext
 from math import cos, sin, pi
 
 
 def breidbart_measurement(ciphertext: Ciphertext) -> QuantumCircuit:
+    """Creates and returns a circuit with a Breidbart measurement, given a ciphertext."""
     breidbart_matrix = [
         [cos(pi/8), sin(pi/8)],
         [-sin(pi/8), cos(pi/8)]

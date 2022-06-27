@@ -1,3 +1,5 @@
+"""The circuit used by the sending party to verify whether to accept a certificate of deletion produced by the receiving party."""
+
 from typing import Set, Tuple
 from global_parameters import GlobalParameters
 from states import Basis, Key
@@ -39,7 +41,12 @@ def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params
         global_params: The GlobalParameters of this experiment.
 
     Returns:
-        A set of strings, where each string is a certificate that was accepted.
+        A tuple (accepted_count, rejected_count, rejected_distances, accepted_certificates) where
+        accepted_count is the number of accepted certificates; rejected_count is the number of
+        rejected certificates; rejected_distances is a dictionary where each key is the Hamming
+        distance between a rejected candidate certificate and the expected certificate, and each value is
+        the number of times this Hamming distance was seen; and accepted_certificates is a set of the
+        certificates which were accepted.
     """
     accepted_count = 0
     rejected_count = 0

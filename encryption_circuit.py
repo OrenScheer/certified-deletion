@@ -1,3 +1,5 @@
+"""The circuit and associated methods used by the sending party to encrypt a plaintext."""
+
 from typing import List, Tuple
 from utils import random_bit_string, xor
 from global_parameters import GlobalParameters

@@ -1,3 +1,5 @@
+"""The circuit used by the receiving party to delete a ciphertext and provide a proof of deletion."""
+
 from states import Ciphertext
 from qiskit import QuantumCircuit
 

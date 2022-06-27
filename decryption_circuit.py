@@ -1,4 +1,6 @@
-from typing import List, Tuple
+"""The circuit and associated methods that are used to decrypt a given ciphertext."""
+
+from typing import Iterator, List, Tuple
 from qiskit import ClassicalRegister, QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash, synd
@@ -28,7 +30,8 @@ def create_decryption_circuit_for_deletion(key: Key, ciphertext: Ciphertext) -> 
     return decryption_circuit
 
 
-def generate_all_binary_strings(n: int):
+def generate_all_binary_strings(n: int) -> Iterator[str]:
+    """Yields all binary strings of length n."""
     for tup in itertools.product("01", repeat=n):
         yield "".join(tup)
 
@@ -72,6 +75,11 @@ def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Cipherte
         ciphertext: The ciphertext that the receiving party possesses.
         message: The original plaintext, to compare with the candidate decryption.
         error_correct: Whether or not to apply the error correction procedure.
+
+    Returns:
+        A tuple (correct_count, incorrect_count, error_count) where correct_count is the number of
+        correctly-decrypted messages, incorrect_count is the number of incorrectly-decrypted messages,
+        and error_count is the number of times the decryption circuit raised an error flag.
     """
     correct_decryption_count = 0
     incorrect_decryption_count = 0

@@ -1,3 +1,5 @@
+"""Utility functions used for various purposes in the simulation."""
+
 from typing import List
 import numpy as np
 

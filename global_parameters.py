@@ -1,5 +1,8 @@
+"""The parameters of a given certified deletion scheme."""
+
 from dataclasses import dataclass
 import json
+from __future__ import annotations
 
 
 @dataclass
@@ -25,7 +28,7 @@ class GlobalParameters:
     delta: float
 
     @classmethod
-    def generate_from_lambda(cls, security_parameter_lambda: float):
+    def generate_from_lambda(cls, security_parameter_lambda: float) -> GlobalParameters:
         """Generates a GlobalParameters object based on a security parameter."""
         def calculate_n() -> int:
             """Returns the length of the message."""
@@ -72,7 +75,7 @@ class GlobalParameters:
         return json.dumps(dictionary)
 
     @classmethod
-    def from_json(cls, json_string: str):
+    def from_json(cls, json_string: str) -> GlobalParameters:
         """Returns a GlobalParameters object based on the encoded JSON string."""
         dictionary = json.loads(json_string)
         return cls(

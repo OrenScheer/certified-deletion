@@ -1,3 +1,5 @@
+"""State classes used by both parties, including the key and encrypted ciphertext."""
+
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import List, Optional, Tuple
@@ -6,9 +8,11 @@ from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
 from global_parameters import GlobalParameters
 import json
+from __future__ import annotations
 
 
 class Basis(IntEnum):
+    """An Enum type representing the basis of a single qubit."""
     COMPUTATIONAL = 0
     HADAMARD = 1
 
@@ -39,10 +43,10 @@ class Key:
     error_correction_matrix: List[List[int]]
 
     @classmethod
-    def generate_key(cls, global_params: GlobalParameters):
+    def generate_key(cls, global_params: GlobalParameters) -> Key:
         """Generates a key according to the global paramaters global_params."""
         def generate_basis() -> Tuple[Basis]:
-            """Generates the basis with which to encode each qubit."""
+            """Generates the basis with which to encode a sequence of qubits."""
             total_length = global_params.m
             hamming_weight = global_params.k
             indices_of_ones = set()
@@ -76,7 +80,7 @@ class Key:
         return json.dumps(vars(self))
 
     @classmethod
-    def from_json(cls, json_string: str):
+    def from_json(cls, json_string: str) -> Key:
         """Returns a Key based on the encoded JSON string."""
         dictionary = json.loads(json_string)
         return cls(
@@ -112,7 +116,7 @@ class Ciphertext:
         return json.dumps(dictionary)
 
     @classmethod
-    def from_json(cls, json_string: str, qpy_filename: Optional[str] = None):
+    def from_json(cls, json_string: str, qpy_filename: Optional[str] = None) -> Ciphertext:
         """Returns a Ciphertext based on the encoded JSON string."""
         dictionary = json.loads(json_string)
         # Placeholder circuit since it may not be needed, for example for decryption verification purposes
