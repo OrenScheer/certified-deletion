@@ -1,8 +1,8 @@
 """The parameters of a given certified deletion scheme."""
 
+from __future__ import annotations
 from dataclasses import dataclass
 import json
-from __future__ import annotations
 
 
 @dataclass

@@ -1,5 +1,6 @@
 """State classes used by both parties, including the key and encrypted ciphertext."""
 
+from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import List, Optional, Tuple
@@ -8,7 +9,6 @@ from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
 from global_parameters import GlobalParameters
 import json
-from __future__ import annotations
 
 
 class Basis(IntEnum):

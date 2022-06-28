@@ -1,5 +1,6 @@
 """A class and associated methods representing a series of five tests and their execution on a quantum backend."""
 
+from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 import os
@@ -11,7 +12,6 @@ from datetime import datetime
 from decryption_circuit import decrypt_results
 from verification_circuit import verify_deletion_counts
 from qiskit.circuit import qpy_serialization
-from __future__ import annotations
 
 
 @dataclass
@@ -84,11 +84,11 @@ class Experiment:
 
     def get_experiment_info(self) -> str:
         """Returns the basic information of this Experiment."""
-        output_string = f"System: {self.backend_system}"
-        output_string += f"Message length: {self.parameters.n}"
-        output_string += f"Total number of qubits: {self.parameters.m}"
-        output_string += f"Qubits for deletion: {self.parameters.k}"
-        output_string += f"Qubits used for message encryption: {self.parameters.s}"
+        output_string = f"System: {self.backend_system}\n"
+        output_string += f"Message length: {self.parameters.n}\n"
+        output_string += f"Total number of qubits: {self.parameters.m}\n"
+        output_string += f"Qubits for deletion: {self.parameters.k}\n"
+        output_string += f"Qubits used for message encryption: {self.parameters.s}\n"
         output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} μs"
         return output_string
 
