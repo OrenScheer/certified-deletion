@@ -74,7 +74,7 @@ class Experiment:
 
     def __str__(self) -> str:
         """Returns a readable representation of this Experiment."""
-        output_string = self.get_experiment_info()
+        output_string = self.get_experiment_info() + "\n\n"
         output_string += self.run_test_1() + "\n\n"
         output_string += self.run_test_2() + "\n\n"
         output_string += self.run_test_3() + "\n\n"
@@ -89,7 +89,7 @@ class Experiment:
         output_string += f"Total number of qubits: {self.parameters.m}\n"
         output_string += f"Qubits for deletion: {self.parameters.k}\n"
         output_string += f"Qubits used for message encryption: {self.parameters.s}\n"
-        output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} μs"
+        output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} us"
         return output_string
 
     def get_test1_success_rate(self) -> float:
