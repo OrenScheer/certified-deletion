@@ -1,6 +1,6 @@
 """The circuit used by the sending party to verify whether to accept a certificate of deletion produced by the receiving party."""
 
-from typing import Set, Tuple
+from typing import Set, Tuple, Dict
 from global_parameters import GlobalParameters
 from states import Basis, Key
 from utils import xor, hamming_weight
@@ -28,7 +28,7 @@ def verify(key: Key, certificate: str, delta: float) -> Tuple[bool, int]:
     return hamming_distance < delta*k, hamming_distance
 
 
-def verify_deletion_counts(certificates: dict[str, int], key: Key, global_params: GlobalParameters) -> Tuple[int, int, dict[int, int], Set[str]]:
+def verify_deletion_counts(certificates: Dict[str, int], key: Key, global_params: GlobalParameters) -> Tuple[int, int, Dict[int, int], Set[str]]:
     """Processes the candidate proof of deletion certificates for a sequence of experimental tests.
 
     Outputs relevant statistics.

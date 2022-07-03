@@ -1,6 +1,6 @@
 """The circuit and associated methods that are used to decrypt a given ciphertext."""
 
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Tuple, Dict
 from qiskit import ClassicalRegister, QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash, synd
@@ -42,7 +42,8 @@ def corr(inp: str, syndrome: str) -> str:
     ans = ""
     for binary_string in generate_all_binary_strings(len(inp)):
         if synd(binary_string) == syndrome:
-            if (this_hamming_distance := hamming_distance(inp, binary_string)) < min_hamming_distance:
+            this_hamming_distance = hamming_distance(inp, binary_string)
+            if this_hamming_distance < min_hamming_distance:
                 min_hamming_distance = this_hamming_distance
                 ans = binary_string
     return ans
@@ -54,7 +55,8 @@ def corr_with_hash(inp: str, syndrome: str, ec_matrix: List[List[int]], ec_hash:
     ans = ""
     for binary_string in generate_all_binary_strings(len(inp)):
         if synd(binary_string) == syndrome:
-            if (this_hamming_distance := hamming_distance(inp, binary_string)) < min_hamming_distance:
+            this_hamming_distance = hamming_distance(inp, binary_string)
+            if this_hamming_distance < min_hamming_distance:
                 min_hamming_distance = this_hamming_distance
                 ans = binary_string
             if calculate_error_correction_hash(ec_matrix, binary_string) == ec_hash:
@@ -62,7 +64,7 @@ def corr_with_hash(inp: str, syndrome: str, ec_matrix: List[List[int]], ec_hash:
     return ans
 
 
-def decrypt_results(measurements: dict[str, int], key: Key, ciphertext: Ciphertext, message: str, error_correct: bool = False) -> Tuple[int, int, int]:
+def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Ciphertext, message: str, error_correct: bool = False) -> Tuple[int, int, int]:
     """Processes and decrypts the candidate decryption measurements for a sequence of experimental tests.
 
     Outputs relevant statistics.

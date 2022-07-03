@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 import json
 import os
 import pandas as pd
-from typing import Tuple
+from typing import Tuple, Dict
 from states import Ciphertext, Key
 from global_parameters import GlobalParameters
 from datetime import datetime
@@ -51,17 +51,17 @@ class Experiment:
     key: Key
     ciphertext: Ciphertext
     message: str
-    deletion_counts_test1: dict[str, int]
-    decryption_counts_test2: dict[str, int]
-    raw_counts_test3: dict[str, int]
-    deletion_counts_test3: dict[str, int] = field(init=False)
-    decryption_counts_test3: dict[str, int] = field(init=False)
-    raw_counts_test4: dict[str, int]
-    deletion_counts_test4: dict[str, int] = field(init=False)
-    decryption_counts_test4: dict[str, int] = field(init=False)
-    raw_counts_test5: dict[str, int]
-    decryption_counts_test5: dict[str, int] = field(init=False)
-    deletion_counts_test5: dict[str, int] = field(init=False)
+    deletion_counts_test1: Dict[str, int]
+    decryption_counts_test2: Dict[str, int]
+    raw_counts_test3: Dict[str, int]
+    deletion_counts_test3: Dict[str, int] = field(init=False)
+    decryption_counts_test3: Dict[str, int] = field(init=False)
+    raw_counts_test4: Dict[str, int]
+    deletion_counts_test4: Dict[str, int] = field(init=False)
+    decryption_counts_test4: Dict[str, int] = field(init=False)
+    raw_counts_test5: Dict[str, int]
+    decryption_counts_test5: Dict[str, int] = field(init=False)
+    deletion_counts_test5: Dict[str, int] = field(init=False)
 
     def __post_init__(self):
         """Splits and saves the counts for the tests with two measurements."""
@@ -140,7 +140,7 @@ class Experiment:
             self.decryption_counts_test5, self.deletion_counts_test5)
         return output_string
 
-    def run_deletion_test(self, deletion_counts: dict[str, int]) -> str:
+    def run_deletion_test(self, deletion_counts: Dict[str, int]) -> str:
         """Runs the verification circuit for a series of measurements.
 
         Args:
@@ -157,7 +157,7 @@ class Experiment:
         )
         return build_deletion_stats(accepted_count, rejected_count, rejected_distances, self.execution_shots)
 
-    def run_decryption_test(self, decryption_counts: dict[str, int]) -> str:
+    def run_decryption_test(self, decryption_counts: Dict[str, int]) -> str:
         """Runs the decryption circuit for a series of measurements.
 
         Args:
@@ -175,7 +175,7 @@ class Experiment:
         )
         return build_decryption_stats(correct_count, incorrect_count, error_count, self.execution_shots)
 
-    def run_combined_test(self, raw_combined_counts: dict[str, int], deletion_counts: dict[str, int], decryption_counts: dict[str, int]) -> str:
+    def run_combined_test(self, raw_combined_counts: Dict[str, int], deletion_counts: Dict[str, int], decryption_counts: Dict[str, int]) -> str:
         """Runs the deletion circuit followed by the decryption circuit for a series of two successive measurements.
 
         Args:
@@ -228,7 +228,7 @@ class Experiment:
                                                     error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
         return output_string
 
-    def run_combined_flipped_test(self, decryption_counts: dict[str, int], deletion_counts: dict[str, int]) -> str:
+    def run_combined_flipped_test(self, decryption_counts: Dict[str, int], deletion_counts: Dict[str, int]) -> str:
         """Runs the decryption circuit followed by the deletion circuit for a series of two successive measurements.
 
         The deletion results are interpreted as checking for tampering. If the deletion certificate
@@ -368,7 +368,7 @@ test5_filename = "test5-raw-counts.csv"
 results_filename = "results.txt"
 
 
-def split_counts(raw_counts: dict[str, int]) -> Tuple[dict[str, int], dict[str, int]]:
+def split_counts(raw_counts: Dict[str, int]) -> Tuple[dict[str, int], dict[str, int]]:
     """Splits the measurement counts of a consecutive deletion and decryption test into two dictionaries.
 
     Args:
@@ -394,7 +394,7 @@ def split_counts(raw_counts: dict[str, int]) -> Tuple[dict[str, int], dict[str, 
     return first_measurement_counts, second_measurement_counts
 
 
-def build_deletion_stats(accepted_count: int, rejected_count: int, rejected_distances: dict[int, int], total_count: int) -> str:
+def build_deletion_stats(accepted_count: int, rejected_count: int, rejected_distances: Dict[int, int], total_count: int) -> str:
     """Returns the relevant statistics of a deletion test.
 
     Args:
@@ -439,7 +439,7 @@ def build_decryption_stats(correct_count: int, incorrect_count: int, error_count
     return output_string.strip()
 
 
-def export_counts(counts: dict[str, int], csv_filename: str, key_label: str) -> None:
+def export_counts(counts: Dict[str, int], csv_filename: str, key_label: str) -> None:
     """Exports a dictionary of counts to a CSV, where the first column is the keys and the second column is the values."""
     df = pd.DataFrame.from_dict(data=counts, orient='index', columns=["Count"]).sort_values(
         by="Count", ascending=False)
@@ -447,7 +447,7 @@ def export_counts(counts: dict[str, int], csv_filename: str, key_label: str) -> 
     df.to_csv(csv_filename)
 
 
-def import_counts(csv_filename: str) -> dict[str, int]:
+def import_counts(csv_filename: str) -> Dict[str, int]:
     """Imports a dictionary of counts from a CSV file, where the first column is the keys and the second column is the values."""
     try:
         df = pd.read_csv(csv_filename, dtype=str)
