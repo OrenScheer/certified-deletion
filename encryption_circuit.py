@@ -27,7 +27,8 @@ def encrypt(message: str, key: Key, global_params: GlobalParameters, microsecond
 
     # Step 5 - prepare qubits
     circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
-    circuit.delay(microsecond_delay, range(circuit.num_qubits), unit="us")
+    if microsecond_delay > 0:
+        circuit.delay(microsecond_delay, range(circuit.num_qubits), unit="us")
     return Ciphertext(circuit, xor(message, x, key.u), p, q)
 
 

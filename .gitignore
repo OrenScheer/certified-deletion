@@ -131,3 +131,7 @@ dmypy.json
 # Collected data
 data/
 data_export.zip
+
+# IDE configuration
+.idea/
+.vscode/
