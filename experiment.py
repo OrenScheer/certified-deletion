@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 import json
 import os
 import pandas as pd
-from typing import Tuple, Dict
+from typing import List, Tuple, Dict
+from qiskit import QuantumCircuit
 from states import Ciphertext, Key
 from scheme_parameters import SchemeParameters
 from datetime import datetime
@@ -23,6 +24,7 @@ class Experiment:
         execution_datetime: The time when this experiment was run.
         execution_shots: The number of times each test was run on the backend.
         backend_system: A string representing, in a suitable format, which backend system was used.
+        optimization_level: The optimization level chosen to run the circuits on the backend.
         microsecond_delay: The time, in microseconds, between the preparation of the qubits and the first measurement.
         folder_path: The complete path to the local folder where this experiment is or will be stored.
         parameters: The parameters describing this instance of the certified deletion scheme.
@@ -40,11 +42,14 @@ class Experiment:
         raw_counts_test5: The combined measurements of test5.
         decryption_counts_test5: The measurements of the decryption in test5.
         deletion_counts_test5: The measurements of the deletion in test5.
+        circuits: A list of QuantumCircuits, where the first circuit is the qubit preparation, and each subsequent
+            circuit is the original circuit and transpiled circuit for each test.
     """
     experiment_id: str
     execution_datetime: datetime
     execution_shots: int
     backend_system: str
+    optimization_level: int
     microsecond_delay: int
     folder_path: str
     parameters: SchemeParameters
@@ -62,6 +67,7 @@ class Experiment:
     raw_counts_test5: Dict[str, int]
     decryption_counts_test5: Dict[str, int] = field(init=False)
     deletion_counts_test5: Dict[str, int] = field(init=False)
+    circuits: List[QuantumCircuit]
 
     def __post_init__(self):
         """Splits and saves the counts for the tests with two measurements."""
@@ -89,7 +95,8 @@ class Experiment:
         output_string += f"Total number of qubits: {self.parameters.m}\n"
         output_string += f"Qubits for deletion: {self.parameters.k}\n"
         output_string += f"Qubits used for message encryption: {self.parameters.s}\n"
-        output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} us"
+        output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} us\n"
+        output_string += f"Optimization level: {self.optimization_level}"
         return output_string
 
     def get_test1_success_rate(self) -> float:
@@ -274,6 +281,7 @@ class Experiment:
                 "backend_system": self.backend_system,
                 "folder_path": self.folder_path,
                 "microsecond_delay": self.microsecond_delay,
+                "optimization_level": self.optimization_level,
             }))
 
         with open(f"{self.folder_path}/{parameters_filename}", "w") as f:
@@ -288,9 +296,8 @@ class Experiment:
         with open(f"{self.folder_path}/{message_filename}", "w") as f:
             f.write(self.message)
 
-        with open(f"{self.folder_path}/{circuit_filename}", "wb") as f:
-            # We assume that the ciphertext circuit is always reset before calling this method
-            qpy_serialization.dump(self.ciphertext.circuit, f)
+        with open(f"{self.folder_path}/{circuits_filename}", "wb") as f:
+            qpy_serialization.dump(self.circuits, f)
 
         export_counts(self.deletion_counts_test1,
                       csv_filename=f"{self.folder_path}/{test1_filename}", key_label="Deletion measurement")
@@ -317,13 +324,16 @@ class Experiment:
             execution_shots = attributes_dict["execution_shots"]
             backend_system = attributes_dict["backend_system"]
             microsecond_delay = attributes_dict["microsecond_delay"]
+            optimization_level = attributes_dict["optimization_level"]
         with open(f"{folder_path}/{parameters_filename}", "r") as params_file:
             parameters = SchemeParameters.from_json(params_file.read())
         with open(f"{folder_path}/{key_filename}", "r") as key_file:
             key = Key.from_json(key_file.read())
         with open(f"{folder_path}/{ciphertext_filename}", "r") as ciphertext_file:
             ciphertext = Ciphertext.from_json(
-                ciphertext_file.read(), qpy_filename=f"{folder_path}/{circuit_filename}")
+                ciphertext_file.read(), qpy_filename=f"{folder_path}/{circuits_filename}")
+        with open(f"{folder_path}/{circuits_filename}", "rb") as f:
+            circuits = qpy_serialization.load(f)
         with open(f"{folder_path}/{message_filename}", "r") as message_file:
             message = message_file.read()
 
@@ -351,6 +361,8 @@ class Experiment:
             execution_datetime=execution_datetime,
             execution_shots=execution_shots,
             microsecond_delay=microsecond_delay,
+            circuits=circuits,
+            optimization_level=optimization_level,
         )
 
 
@@ -359,7 +371,7 @@ parameters_filename = "scheme_parameters.txt"
 key_filename = "key.txt"
 ciphertext_filename = "ciphertext.txt"
 message_filename = "message.txt"
-circuit_filename = "base_circuit.qpy"
+circuits_filename = "base_circuit.qpy"
 test1_filename = "test1-deletion-counts.csv"
 test2_filename = "test2-decryption-counts.csv"
 test3_filename = "test3-raw-counts.csv"
