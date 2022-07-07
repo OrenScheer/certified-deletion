@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 from qiskit import QuantumCircuit
 from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
-from global_parameters import GlobalParameters
+from scheme_parameters import SchemeParameters
 import json
 
 
@@ -43,27 +43,27 @@ class Key:
     error_correction_matrix: List[List[int]]
 
     @classmethod
-    def generate_key(cls, global_params: GlobalParameters) -> Key:
-        """Generates a key according to the global paramaters global_params."""
+    def generate_key(cls, scheme_params: SchemeParameters) -> Key:
+        """Generates a key according to the global paramaters scheme_params."""
         def generate_basis() -> Tuple[Basis]:
             """Generates the basis with which to encode a sequence of qubits."""
-            total_length = global_params.m
-            hamming_weight = global_params.k
+            total_length = scheme_params.m
+            hamming_weight = scheme_params.k
             indices_of_ones = set()
             while len(indices_of_ones) < hamming_weight:
                 indices_of_ones.add(random_int(0, total_length - 1))
             return tuple(Basis.HADAMARD if i in indices_of_ones else Basis.COMPUTATIONAL for i in range(total_length))
 
         theta = generate_basis()
-        r_restricted_i_bar = random_bit_string(global_params.k)
-        u = random_bit_string(global_params.n)
-        d = random_bit_string(global_params.tau)
-        e = random_bit_string(global_params.mu)
+        r_restricted_i_bar = random_bit_string(scheme_params.k)
+        u = random_bit_string(scheme_params.n)
+        d = random_bit_string(scheme_params.tau)
+        e = random_bit_string(scheme_params.mu)
 
         privacy_amplification_matrix = random_bit_matrix(
-            global_params.n, global_params.s)
+            scheme_params.n, scheme_params.s)
         error_correction_matrix = random_bit_matrix(
-            global_params.tau, global_params.s)
+            scheme_params.tau, scheme_params.s)
 
         return cls(
             theta=theta,

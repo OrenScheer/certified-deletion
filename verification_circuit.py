@@ -1,7 +1,7 @@
 """The circuit used by the sending party to verify whether to accept a certificate of deletion produced by the receiving party."""
 
 from typing import Set, Tuple, Dict
-from global_parameters import GlobalParameters
+from scheme_parameters import SchemeParameters
 from states import Basis, Key
 from utils import xor, hamming_weight
 
@@ -28,7 +28,7 @@ def verify(key: Key, certificate: str, delta: float) -> Tuple[bool, int]:
     return hamming_distance < delta*k, hamming_distance
 
 
-def verify_deletion_counts(certificates: Dict[str, int], key: Key, global_params: GlobalParameters) -> Tuple[int, int, Dict[int, int], Set[str]]:
+def verify_deletion_counts(certificates: Dict[str, int], key: Key, scheme_params: SchemeParameters) -> Tuple[int, int, Dict[int, int], Set[str]]:
     """Processes the candidate proof of deletion certificates for a sequence of experimental tests.
 
     Outputs relevant statistics.
@@ -38,7 +38,7 @@ def verify_deletion_counts(certificates: Dict[str, int], key: Key, global_params
             the receiving party, and whose values are the number of times that each candidate string
             has occurred experimentally.
         key: The key to be used in the verification circuit.
-        global_params: The GlobalParameters of this experiment.
+        scheme_params: The SchemeParameters of this experiment.
 
     Returns:
         A tuple (accepted_count, rejected_count, rejected_distances, accepted_certificates) where
@@ -54,7 +54,7 @@ def verify_deletion_counts(certificates: Dict[str, int], key: Key, global_params
     accepted_certificates = set()
     for certificate, count in certificates.items():
         is_exact_match, distance = verify(
-            key, certificate, global_params.delta)
+            key, certificate, scheme_params.delta)
         if is_exact_match:
             accepted_count += count
             accepted_certificates.add(certificate)

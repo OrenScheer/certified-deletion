@@ -7,7 +7,7 @@ import os
 import pandas as pd
 from typing import Tuple, Dict
 from states import Ciphertext, Key
-from global_parameters import GlobalParameters
+from scheme_parameters import SchemeParameters
 from datetime import datetime
 from decryption_circuit import decrypt_results
 from verification_circuit import verify_deletion_counts
@@ -47,7 +47,7 @@ class Experiment:
     backend_system: str
     microsecond_delay: int
     folder_path: str
-    parameters: GlobalParameters
+    parameters: SchemeParameters
     key: Key
     ciphertext: Ciphertext
     message: str
@@ -318,7 +318,7 @@ class Experiment:
             backend_system = attributes_dict["backend_system"]
             microsecond_delay = attributes_dict["microsecond_delay"]
         with open(f"{folder_path}/{parameters_filename}", "r") as params_file:
-            parameters = GlobalParameters.from_json(params_file.read())
+            parameters = SchemeParameters.from_json(params_file.read())
         with open(f"{folder_path}/{key_filename}", "r") as key_file:
             key = Key.from_json(key_file.read())
         with open(f"{folder_path}/{ciphertext_filename}", "r") as ciphertext_file:
@@ -355,7 +355,7 @@ class Experiment:
 
 
 experiment_attributes_filename = "experiment_attributes.txt"
-parameters_filename = "global_parameters.txt"
+parameters_filename = "scheme_parameters.txt"
 key_filename = "key.txt"
 ciphertext_filename = "ciphertext.txt"
 message_filename = "message.txt"

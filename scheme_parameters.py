@@ -6,7 +6,7 @@ import json
 
 
 @dataclass
-class GlobalParameters:
+class SchemeParameters:
     """A set of parameters defined for a specific experiment.
 
     Attributes:
@@ -28,8 +28,8 @@ class GlobalParameters:
     delta: float
 
     @classmethod
-    def generate_from_lambda(cls, security_parameter_lambda: float) -> GlobalParameters:
-        """Generates a GlobalParameters object based on a security parameter."""
+    def generate_from_lambda(cls, security_parameter_lambda: float) -> SchemeParameters:
+        """Generates a SchemeParameters object based on a security parameter."""
         def calculate_n() -> int:
             """Returns the length of the message."""
             return 4
@@ -75,8 +75,8 @@ class GlobalParameters:
         return json.dumps(dictionary)
 
     @classmethod
-    def from_json(cls, json_string: str) -> GlobalParameters:
-        """Returns a GlobalParameters object based on the encoded JSON string."""
+    def from_json(cls, json_string: str) -> SchemeParameters:
+        """Returns a SchemeParameters object based on the encoded JSON string."""
         dictionary = json.loads(json_string)
         return cls(
             security_parameter_lambda=dictionary["security_parameter_lambda"],

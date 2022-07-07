@@ -2,16 +2,16 @@
 
 from typing import List, Tuple
 from utils import random_bit_string, xor
-from global_parameters import GlobalParameters
+from scheme_parameters import SchemeParameters
 from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
 
-def encrypt(message: str, key: Key, global_params: GlobalParameters, microsecond_delay: int = 0) -> Ciphertext:
+def encrypt(message: str, key: Key, scheme_parmas: SchemeParameters, microsecond_delay: int = 0) -> Ciphertext:
     """Encrypts a message according to the values specified by a Key, producing a resulting Ciphertext."""
 
     # Step 1 - sample the values for the qubits to be encoded in the computational basis
-    r_restricted_i = random_bit_string(global_params.s)
+    r_restricted_i = random_bit_string(scheme_parmas.s)
 
     # Step 2 - compute the privacy-amplified one-time pad
     x = calculate_privacy_amplification_hash(
@@ -23,7 +23,7 @@ def encrypt(message: str, key: Key, global_params: GlobalParameters, microsecond
 
     # Step 4 - compute the error syndrome of r_restricted_i
     # q = xor(synd(r_restricted_i), key.e)
-    q = "0" * global_params.mu
+    q = "0" * scheme_parmas.mu
 
     # Step 5 - prepare qubits
     circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
