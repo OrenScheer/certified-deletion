@@ -106,24 +106,28 @@ class Experiment:
         """Runs a test of honest deletion."""
         output_string = "-----TEST 1: HONEST DELETION-----\n"
         output_string += self.run_deletion_test(self.deletion_counts_test1)
+        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test1_success_rate()}"
         return output_string
 
     def run_test_2(self) -> str:
         """Runs a test of decryption."""
         output_string = "-----TEST 2: DECRYPTION-----\n"
         output_string += self.run_decryption_test(self.decryption_counts_test2)
+        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test2_success_rate()}"
         return output_string
 
     def run_test_3(self) -> str:
         """Runs a test of honest deletion, then attempted decryption."""
         output_string = "-----TEST 3: HONEST DELETION, THEN DECRYPTION-----\n"
         output_string += self.run_combined_test(self.combined_counts_test3)
+        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test3_success_rate()}"
         return output_string
 
     def run_test_4(self) -> str:
         """Runs a test of malicious deletion, then attempted decryption."""
         output_string = "-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----\n"
         output_string += self.run_combined_test(self.combined_counts_test4)
+        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test4_success_rate()}"
         return output_string
 
     def run_test_5(self) -> str:
@@ -131,6 +135,7 @@ class Experiment:
         output_string = "-----TEST 5: TAMPER DETECTION-----\n"
         output_string += self.run_combined_flipped_test(
             self.decryption_counts_test5, self.deletion_counts_test5)
+        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test5_success_rate()}"
         return output_string
 
     def run_deletion_test(self, deletion_counts: Dict[str, int]) -> str:

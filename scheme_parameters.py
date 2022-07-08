@@ -3,6 +3,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import json
+from math import sin, pi
+import typing
+from scipy.stats import binom
 
 
 @dataclass
@@ -68,6 +71,46 @@ class SchemeParameters:
             mu=calculate_mu(),
             delta=calculate_delta(),
         )
+
+    def get_expected_test1_success_rate(self, error_rate: float = 0) -> float:
+        """Returns the expected (noise-free) success percentage for test1."""
+        minimum_correct_qubits = self.k - \
+            max(i for i in range(self.k) if i < self.k * self.delta)
+        return (1 - typing.cast(float, binom.cdf(minimum_correct_qubits - 1, self.k, 1 - error_rate))) * 100
+
+    def get_expected_test2_success_rate(self, error_rate: float = 0) -> typing.Tuple[float, float]:
+        """Returns a tuple of the expected (noise-free) success percentage range for test2."""
+        lower_bound = typing.cast(
+            float, binom.pmf(self.s, self.s, 1 - error_rate))
+        upper_bound = lower_bound + \
+            (typing.cast(float, binom.cdf(self.s - 1, self.s, 1 - error_rate))/(2**self.n)
+             )  # Account for the possibility of collision in the privacy amplification
+        return lower_bound * 100, upper_bound * 100
+
+    def get_expected_test3_success_rate(self) -> typing.Tuple[float, typing.Tuple[float, float]]:
+        """Returns a tuple of two values. The first value is the expected success percentage for the deletion part of test3,
+        and the second is a tuple of the expected success percentage range for the decryption part of test3."""
+        expected_deletion_success = self.get_expected_test1_success_rate()
+        expected_decryption_range = self.get_expected_test2_success_rate(
+            error_rate=0.5)
+        return expected_deletion_success, expected_decryption_range
+
+    def get_expected_test4_success_rate(self) -> typing.Tuple[float, typing.Tuple[float, float]]:
+        """Returns a tuple of two values. The first value is the expected success percentage for the deletion part of test4,
+        and the second is a tuple of the expected percentage range for the decryption part of test4."""
+        breidbart_error_rate = sin(pi/8) ** 2
+        expected_deletion_success = self.get_expected_test1_success_rate(
+            error_rate=breidbart_error_rate)
+        expected_decryption_range = self.get_expected_test2_success_rate(
+            error_rate=breidbart_error_rate)
+        return expected_deletion_success, expected_decryption_range
+
+    def get_expected_test5_success_rate(self) -> typing.Tuple[typing.Tuple[float, float], float]:
+        """Returns a tuple of two values. The first value is a tuple representing the expected success range for the decryption part
+        of test5, and the second value is the expected success percentage for the deletion part of test5."""
+        expected_decryption_range = self.get_expected_test2_success_rate()
+        expected_deletion_success = self.get_expected_test1_success_rate()
+        return expected_decryption_range, expected_deletion_success
 
     def to_json(self) -> str:
         """Returns a JSON string representing this object."""
