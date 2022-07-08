@@ -33,12 +33,8 @@ class Experiment:
         message: The plaintext message.
         deletion_counts_test1: The measurements of the deletion in test1.
         decryption_counts_test2: The measurements of the decryption in test2.
-        raw_counts_test3: The combined measurements of test3.
-        deletion_counts_test3: The measurements of the deletion in test3.
-        decryption_counts_test3: The measurements of the decryption in test3.
-        raw_counts_test4: The combined measurements of test4.
-        deletion_counts_test4: The measurements of the deletion in test4.
-        decryption_counts_test4: The measurements of the decryption in test4.
+        combined_counts_test3: The combined measurements of test3.
+        combined_counts_test4: The combined measurements of test4.
         raw_counts_test5: The combined measurements of test5.
         decryption_counts_test5: The measurements of the decryption in test5.
         deletion_counts_test5: The measurements of the deletion in test5.
@@ -58,12 +54,8 @@ class Experiment:
     message: str
     deletion_counts_test1: Dict[str, int]
     decryption_counts_test2: Dict[str, int]
-    raw_counts_test3: Dict[str, int]
-    deletion_counts_test3: Dict[str, int] = field(init=False)
-    decryption_counts_test3: Dict[str, int] = field(init=False)
-    raw_counts_test4: Dict[str, int]
-    deletion_counts_test4: Dict[str, int] = field(init=False)
-    decryption_counts_test4: Dict[str, int] = field(init=False)
+    combined_counts_test3: Dict[str, int]
+    combined_counts_test4: Dict[str, int]
     raw_counts_test5: Dict[str, int]
     decryption_counts_test5: Dict[str, int] = field(init=False)
     deletion_counts_test5: Dict[str, int] = field(init=False)
@@ -71,10 +63,6 @@ class Experiment:
 
     def __post_init__(self):
         """Splits and saves the counts for the tests with two measurements."""
-        self.deletion_counts_test3, self.decryption_counts_test3 = split_counts(
-            self.raw_counts_test3)
-        self.deletion_counts_test4, self.decryption_counts_test4 = split_counts(
-            self.raw_counts_test4)
         self.decryption_counts_test5, self.deletion_counts_test5 = split_counts(
             self.raw_counts_test5)
 
@@ -129,15 +117,13 @@ class Experiment:
     def run_test_3(self) -> str:
         """Runs a test of honest deletion, then attempted decryption."""
         output_string = "-----TEST 3: HONEST DELETION, THEN DECRYPTION-----\n"
-        output_string += self.run_combined_test(
-            self.raw_counts_test3, self.deletion_counts_test3, self.decryption_counts_test3)
+        output_string += self.run_combined_test(self.combined_counts_test3)
         return output_string
 
     def run_test_4(self) -> str:
         """Runs a test of malicious deletion, then attempted decryption."""
         output_string = "-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----\n"
-        output_string += self.run_combined_test(
-            self.raw_counts_test4, self.deletion_counts_test4, self.decryption_counts_test4)
+        output_string += self.run_combined_test(self.combined_counts_test4)
         return output_string
 
     def run_test_5(self) -> str:
@@ -182,16 +168,13 @@ class Experiment:
         )
         return build_decryption_stats(correct_count, incorrect_count, error_count, self.execution_shots)
 
-    def run_combined_test(self, raw_combined_counts: Dict[str, int], deletion_counts: Dict[str, int], decryption_counts: Dict[str, int]) -> str:
+    def run_combined_test(self, combined_counts: Dict[str, int]) -> str:
         """Runs the deletion circuit followed by the decryption circuit for a series of two successive measurements.
 
         Args:
-            raw_combined_counts: A dictionary where each key is a space-separated string of the two
-                successive measurements.
-            deletion_counts: A dictionary where each key is a measurement result for a deletion
-                certificate, and each value is the number of times that this measurement occurred.
-            decryption_counts: A dictionary where each key is a decryption measurement,
-                and each value is the number of times that this measurement occurred.
+            combined_counts: A dictionary where each key is a single measurement result for both
+                the deletion certificate and the decryption attempt, and each value is the number
+                of times this measurement occurred.
 
         Returns:
             A string containing the combined results of the deletion and decryption, as well as the results
@@ -199,7 +182,7 @@ class Experiment:
         """
         output_string = ""
         accepted_count, rejected_count, rejected_distances, accepted_certificates = verify_deletion_counts(
-            deletion_counts,
+            combined_counts,
             self.key,
             self.parameters
         )
@@ -207,7 +190,7 @@ class Experiment:
             accepted_count, rejected_count, rejected_distances, self.execution_shots)
 
         correct_count, incorrect_count, error_count = decrypt_results(
-            decryption_counts,
+            combined_counts,
             self.key,
             self.ciphertext,
             self.message
@@ -218,13 +201,8 @@ class Experiment:
         if accepted_count:
             output_string += "\n\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:\n"
 
-            accepted_deletion_decryption_counts = {}
-            for measurement, count in raw_combined_counts.items():
-                deletion_measurement, decryption_measurement = measurement.split(
-                    " ")
-                if deletion_measurement in accepted_certificates:
-                    accepted_deletion_decryption_counts[decryption_measurement] = accepted_deletion_decryption_counts.get(
-                        decryption_measurement, 0) + count
+            accepted_deletion_decryption_counts = {
+                key: val for key, val in combined_counts.items() if key in accepted_certificates}
             doubly_correct_count, incorrect_decrypt_only_count, error_decrypt_only_count = decrypt_results(
                 accepted_deletion_decryption_counts,
                 self.key,
@@ -303,9 +281,9 @@ class Experiment:
                       csv_filename=f"{self.folder_path}/{test1_filename}", key_label="Deletion measurement")
         export_counts(self.decryption_counts_test2,
                       csv_filename=f"{self.folder_path}/{test2_filename}", key_label="Decryption measurement")
-        export_counts(self.raw_counts_test3,
+        export_counts(self.combined_counts_test3,
                       csv_filename=f"{self.folder_path}/{test3_filename}", key_label="Measurement")
-        export_counts(self.raw_counts_test4,
+        export_counts(self.combined_counts_test4,
                       csv_filename=f"{self.folder_path}/{test4_filename}", key_label="Measurement")
         export_counts(self.raw_counts_test5,
                       csv_filename=f"{self.folder_path}/{test5_filename}", key_label="Measurement")
@@ -341,8 +319,10 @@ class Experiment:
             f"{folder_path}/{test1_filename}")
         decryption_counts_test2 = import_counts(
             f"{folder_path}/{test2_filename}")
-        raw_counts_test3 = import_counts(f"{folder_path}/{test3_filename}")
-        raw_counts_test4 = import_counts(f"{folder_path}/{test4_filename}")
+        combined_counts_test3 = import_counts(
+            f"{folder_path}/{test3_filename}")
+        combined_counts_test4 = import_counts(
+            f"{folder_path}/{test4_filename}")
         raw_counts_test5 = import_counts(f"{folder_path}/{test5_filename}")
 
         return cls(
@@ -355,8 +335,8 @@ class Experiment:
             message=message,
             deletion_counts_test1=deletion_counts_test1,
             decryption_counts_test2=decryption_counts_test2,
-            raw_counts_test3=raw_counts_test3,
-            raw_counts_test4=raw_counts_test4,
+            combined_counts_test3=combined_counts_test3,
+            combined_counts_test4=combined_counts_test4,
             raw_counts_test5=raw_counts_test5,
             execution_datetime=execution_datetime,
             execution_shots=execution_shots,
