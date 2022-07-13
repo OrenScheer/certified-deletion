@@ -22,8 +22,8 @@ def encrypt(message: str, key: Key, scheme_parmas: SchemeParameters) -> Cipherte
         key.error_correction_matrix, r_restricted_i), key.d)
 
     # Step 4 - compute the error syndrome of r_restricted_i
-    # q = xor(synd(r_restricted_i), key.e)
-    q = "0" * scheme_parmas.mu
+    q = xor(synd(r_restricted_i), key.e)
+    # q = "0" * scheme_parmas.mu
 
     # Step 5 - prepare qubits
     circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)

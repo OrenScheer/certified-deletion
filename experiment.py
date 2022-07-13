@@ -54,12 +54,12 @@ class Experiment:
     message: str
     deletion_counts_test1: Dict[str, int]
     decryption_counts_test2: Dict[str, int]
-    combined_counts_test3: Dict[str, int]
-    combined_counts_test4: Dict[str, int]
-    raw_counts_test5: Dict[str, int]
+    circuits: List[QuantumCircuit]
+    combined_counts_test3: Dict[str, int] = field(default_factory=dict)
+    combined_counts_test4: Dict[str, int] = field(default_factory=dict)
+    raw_counts_test5: Dict[str, int] = field(default_factory=dict)
     decryption_counts_test5: Dict[str, int] = field(init=False)
     deletion_counts_test5: Dict[str, int] = field(init=False)
-    circuits: List[QuantumCircuit]
 
     def __post_init__(self):
         """Splits and saves the counts for the tests with two measurements."""
@@ -96,10 +96,10 @@ class Experiment:
         )
         return (accepted_count / self.execution_shots) * 100
 
-    def get_test2_success_rate(self) -> float:
+    def get_test2_success_rate(self, error_correct=False) -> float:
         """Returns the percentage of successful decryptions for test2."""
         decryption_count, _, _ = decrypt_results(
-            self.decryption_counts_test2, self.key, self.ciphertext, self.message)
+            self.decryption_counts_test2, self.key, self.ciphertext, self.message, error_correct)
         return (decryption_count / self.execution_shots) * 100
 
     def run_test_1(self) -> str:

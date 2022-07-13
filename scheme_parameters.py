@@ -39,11 +39,11 @@ class SchemeParameters:
 
         def calculate_m() -> int:
             """Returns the total number of qubits."""
-            return 15
+            return 27
 
         def calculate_k() -> int:
             """Returns the number of qubits used for deletion."""
-            return 8
+            return 20
 
         def calculate_s() -> int:
             """Returns the number of qubits used as a one-time pad for encryption."""
@@ -51,7 +51,7 @@ class SchemeParameters:
 
         def calculate_tau() -> int:
             """Returns the length of the error correction hash."""
-            return 3
+            return 0
 
         def calculate_mu() -> int:
             """Returns the length of the error syndromes."""
