@@ -1,0 +1,1 @@
+{"experiment_id": "cmc2", "execution_datetime": "2022-06-30T10:31:38.420139", "execution_shots": 1000, "backend_system": "IBMQ Montreal", "folder_path": "data/cmc2", "microsecond_delay": 0}

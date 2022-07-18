@@ -1,0 +1,1 @@
+{"security_parameter_lambda": 1, "n": 5, "m": 27, "k": 15, "s": 12, "tau": 3, "mu": 3, "delta": 0.06666666666666667}
