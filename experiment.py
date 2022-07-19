@@ -13,6 +13,7 @@ from datetime import datetime
 from decryption_circuit import decrypt_results
 from verification_circuit import verify_deletion_counts
 from qiskit.circuit import qpy_serialization
+from qiskit.providers.models.backendproperties import Nduv
 
 
 @dataclass
@@ -253,7 +254,7 @@ class Experiment:
 
         return output_string
 
-    def export_to_folder(self) -> None:
+    def export_to_folder(self, qubit_list: List[List[Nduv]]) -> None:
         """Exports the values and results of this Experiment to a folder."""
         os.makedirs(self.folder_path, exist_ok=True)
         with open(f"{self.folder_path}/{experiment_attributes_filename}", "w") as f:
@@ -295,6 +296,9 @@ class Experiment:
 
         with open(f"{self.folder_path}/{results_filename}", "w") as f:
             f.write(str(self))
+
+        export_qubits_info(
+            qubit_list, f"{self.folder_path}/{qubit_properties_filename}")
 
     @classmethod
     def reconstruct_experiment_from_folder(cls, folder_path: str) -> Experiment:
@@ -363,6 +367,7 @@ test3_filename = "test3-raw-counts.csv"
 test4_filename = "test4-raw-counts.csv"
 test5_filename = "test5-raw-counts.csv"
 results_filename = "results.txt"
+qubit_properties_filename = "qubits.csv"
 
 
 def split_counts(raw_counts: Dict[str, int]) -> Tuple[dict[str, int], dict[str, int]]:
@@ -442,6 +447,13 @@ def export_counts(counts: Dict[str, int], csv_filename: str, key_label: str) -> 
         by="Count", ascending=False)
     df.index.rename(key_label, inplace=True)
     df.to_csv(csv_filename)
+
+
+def export_qubits_info(qubits: List[List[Nduv]], csv_filename: str) -> None:
+    props = [dict({"qubit": i}, **prop.to_dict())
+             for i, qubit in enumerate(qubits) for prop in qubit]
+    df = pd.DataFrame.from_records(data=props)
+    df.to_csv(csv_filename, index=False)
 
 
 def import_counts(csv_filename: str) -> Dict[str, int]:
