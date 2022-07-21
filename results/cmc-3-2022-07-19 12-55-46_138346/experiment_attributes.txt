@@ -1,0 +1,1 @@
+{"experiment_id": "cmc-3-2022-07-19 12-55-46_138346", "execution_datetime": "2022-07-19T12:55:46.138346", "execution_shots": 1000, "backend_system": "ibmq_montreal", "folder_path": "data/cmc-3-2022-07-19 12-55-46_138346", "microsecond_delay": 2, "optimization_level": 2}

@@ -1,0 +1,1 @@
+{"experiment_id": "cmc-3-2022-07-13 07-58-22_494085", "execution_datetime": "2022-07-13T07:58:22.494085", "execution_shots": 1000, "backend_system": "Fake Montreal", "folder_path": "data/cmc-3-2022-07-13 07-58-22_494085", "microsecond_delay": 5, "optimization_level": 2}

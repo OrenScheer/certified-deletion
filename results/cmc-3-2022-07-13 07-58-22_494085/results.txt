@@ -1,0 +1,79 @@
+System: Fake Montreal
+Message length: 4
+Total number of qubits: 15
+Qubits for deletion: 8
+Qubits used for message encryption: 7
+Delay between qubit preparation and first measurement: 5 us
+Optimization level: 2
+
+-----TEST 1: HONEST DELETION-----
+Accepted proof of deletion: 595/1000 (59.5%)
+Rejected proof of deletion: 405/1000 (40.5%)
+Of the 405 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 312
+  Hamming distance 2: 82
+  Hamming distance 3: 11
+
+Expected success rate: 100.0
+
+-----TEST 2: DECRYPTION-----
+Correct message decrypted: 751/1000 (75.1%)
+Incorrect message decrypted: 249/1000 (24.9%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Expected success rate: (100.0, 100.0)
+
+-----TEST 3: HONEST DELETION, THEN DECRYPTION-----
+Accepted proof of deletion: 697/1000 (69.69999999999999%)
+Rejected proof of deletion: 303/1000 (30.3%)
+Of the 303 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 264
+  Hamming distance 2: 32
+  Hamming distance 3: 5
+  Hamming distance 4: 2
+
+Correct message decrypted: 133/1000 (13.3%)
+Incorrect message decrypted: 867/1000 (86.7%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Of the measurements where the proof of deletion was accepted, the following are the decryption statistics:
+Correct message decrypted: 91/697 (13.055954088952653%)
+Incorrect message decrypted: 606/697 (86.94404591104734%)
+Error detected during decryption process (hashes didn't match): 0/697 (0.0%)
+
+Expected success rate: (100.0, (0.78125, 6.982421875))
+
+-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----
+Accepted proof of deletion: 163/1000 (16.3%)
+Rejected proof of deletion: 837/1000 (83.7%)
+Of the 837 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 303
+  Hamming distance 2: 301
+  Hamming distance 3: 171
+  Hamming distance 4: 53
+  Hamming distance 5: 9
+
+Correct message decrypted: 383/1000 (38.3%)
+Incorrect message decrypted: 617/1000 (61.7%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Of the measurements where the proof of deletion was accepted, the following are the decryption statistics:
+Correct message decrypted: 63/163 (38.65030674846626%)
+Incorrect message decrypted: 100/163 (61.34969325153374%)
+Error detected during decryption process (hashes didn't match): 0/163 (0.0%)
+
+Expected success rate: (28.173806968950743, (33.007668037459446, 37.19468878511824))
+
+-----TEST 5: TAMPER DETECTION-----
+Correct message decrypted: 748/1000 (74.8%)
+Incorrect message decrypted: 252/1000 (25.2%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Accepted proof of deletion: 664/1000 (66.4%)
+Rejected proof of deletion: 336/1000 (33.6%)
+Of the 336 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 294
+  Hamming distance 2: 38
+  Hamming distance 3: 4
+
+Expected success rate: ((100.0, 100.0), 100.0)

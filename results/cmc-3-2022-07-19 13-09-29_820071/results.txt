@@ -1,0 +1,111 @@
+System: ibmq_montreal
+Message length: 4
+Total number of qubits: 27
+Qubits for deletion: 20
+Qubits used for message encryption: 7
+Delay between qubit preparation and first measurement: 2 us
+Optimization level: 2
+
+-----TEST 1: HONEST DELETION-----
+Accepted proof of deletion: 1/1000 (0.1%)
+Rejected proof of deletion: 999/1000 (99.9%)
+Of the 999 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 21
+  Hamming distance 2: 92
+  Hamming distance 3: 202
+  Hamming distance 4: 256
+  Hamming distance 5: 207
+  Hamming distance 6: 127
+  Hamming distance 7: 65
+  Hamming distance 8: 21
+  Hamming distance 9: 6
+  Hamming distance 10: 1
+  Hamming distance 12: 1
+
+Expected success rate: 100.0
+
+-----TEST 2: DECRYPTION-----
+Correct message decrypted: 602/1000 (60.199999999999996%)
+Incorrect message decrypted: 398/1000 (39.800000000000004%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Expected success rate: (100.0, 100.0)
+
+-----TEST 3: HONEST DELETION, THEN DECRYPTION-----
+Accepted proof of deletion: 1/1000 (0.1%)
+Rejected proof of deletion: 999/1000 (99.9%)
+Of the 999 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 21
+  Hamming distance 2: 92
+  Hamming distance 3: 202
+  Hamming distance 4: 256
+  Hamming distance 5: 207
+  Hamming distance 6: 127
+  Hamming distance 7: 65
+  Hamming distance 8: 21
+  Hamming distance 9: 6
+  Hamming distance 10: 1
+  Hamming distance 12: 1
+
+Correct message decrypted: 46/1000 (4.6%)
+Incorrect message decrypted: 954/1000 (95.39999999999999%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Of the measurements where the proof of deletion was accepted, the following are the decryption statistics:
+Correct message decrypted: 0/1 (0.0%)
+Incorrect message decrypted: 1/1 (100.0%)
+Error detected during decryption process (hashes didn't match): 0/1 (0.0%)
+
+Expected success rate: (100.0, (0.78125, 6.982421875))
+
+-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----
+Accepted proof of deletion: 4/1000 (0.4%)
+Rejected proof of deletion: 996/1000 (99.6%)
+Of the 996 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 1: 19
+  Hamming distance 2: 55
+  Hamming distance 3: 123
+  Hamming distance 4: 159
+  Hamming distance 5: 176
+  Hamming distance 6: 181
+  Hamming distance 7: 146
+  Hamming distance 8: 70
+  Hamming distance 9: 49
+  Hamming distance 10: 14
+  Hamming distance 11: 4
+
+Correct message decrypted: 176/1000 (17.599999999999998%)
+Incorrect message decrypted: 824/1000 (82.39999999999999%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Of the measurements where the proof of deletion was accepted, the following are the decryption statistics:
+Correct message decrypted: 0/4 (0.0%)
+Incorrect message decrypted: 4/4 (100.0%)
+Error detected during decryption process (hashes didn't match): 0/4 (0.0%)
+
+Expected success rate: (4.213217087090015, (33.007668037459446, 37.19468878511824))
+
+-----TEST 5: TAMPER DETECTION-----
+Correct message decrypted: 669/1000 (66.9%)
+Incorrect message decrypted: 331/1000 (33.1%)
+Error detected during decryption process (hashes didn't match): 0/1000 (0.0%)
+
+Accepted proof of deletion: 0/1000 (0.0%)
+Rejected proof of deletion: 1000/1000 (100.0%)
+Of the 1000 rejected certificates, the following are the counts of the Hamming distances between the received certificate and the expected certificate:
+  Hamming distance 2: 1
+  Hamming distance 3: 5
+  Hamming distance 4: 21
+  Hamming distance 5: 59
+  Hamming distance 6: 94
+  Hamming distance 7: 148
+  Hamming distance 8: 176
+  Hamming distance 9: 177
+  Hamming distance 10: 132
+  Hamming distance 11: 111
+  Hamming distance 12: 50
+  Hamming distance 13: 17
+  Hamming distance 14: 8
+  Hamming distance 17: 1
+
+Expected success rate: ((100.0, 100.0), 100.0)
