@@ -8,26 +8,19 @@ from utils import xor, hamming_distance
 import itertools
 
 
-def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> QuantumCircuit:
+def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> List[QuantumCircuit]:
     """Creates and returns the decryption circuit, given a Ciphertext and an associated Key."""
-    decryption_circuit = ciphertext.circuit.copy()
-    decryption_circuit.barrier()
-    decryption_circuit.h(
-        [i for i in range(decryption_circuit.num_qubits) if key.theta[i] is Basis.HADAMARD])
-    decryption_circuit.measure_all()
-    return decryption_circuit
-
-
-def create_decryption_circuit_for_deletion(key: Key, ciphertext: Ciphertext) -> QuantumCircuit:
-    """Creates and returns a decryption circuit where the deletion qubits are preserved, given a Ciphertext and Key."""
-    decryption_circuit = ciphertext.circuit.copy()
-    decryption_circuit.barrier()
-    classical_register = ClassicalRegister(
-        key.theta.count(Basis.COMPUTATIONAL))
-    decryption_circuit.add_register(classical_register)
-    decryption_circuit.measure([i for i in range(
-        decryption_circuit.num_qubits) if key.theta[i] is Basis.COMPUTATIONAL], classical_register)
-    return decryption_circuit
+    decryption_circuits = [circuit.copy() for circuit in ciphertext.circuits]
+    qubit_count = 0
+    for circuit in decryption_circuits:
+        circuit.barrier()
+        h_indices = [i for i in range(
+            circuit.num_qubits) if key.theta[qubit_count + i] is Basis.HADAMARD]
+        if h_indices:
+            circuit.h(h_indices)
+        circuit.measure_all()
+        qubit_count += circuit.num_qubits
+    return decryption_circuits
 
 
 def generate_all_binary_strings(n: int) -> Iterator[str]:

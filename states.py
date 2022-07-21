@@ -3,7 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 from qiskit import QuantumCircuit
 from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
@@ -104,7 +104,7 @@ class Ciphertext:
         p: A one-time padded error correction hash.
         q: A one-time padded error syndrome string.
     """
-    circuit: QuantumCircuit
+    circuits: List[QuantumCircuit]
     c: str
     p: str
     q: str
@@ -112,7 +112,7 @@ class Ciphertext:
     def to_json(self) -> str:
         """Returns a JSON string representing this object."""
         dictionary = vars(self).copy()
-        dictionary.pop("circuit")
+        dictionary.pop("circuits")
         return json.dumps(dictionary)
 
     @classmethod
@@ -120,12 +120,13 @@ class Ciphertext:
         """Returns a Ciphertext based on the encoded JSON string."""
         dictionary = json.loads(json_string)
         # Placeholder circuit since it may not be needed, for example for decryption verification purposes
-        circuit = QuantumCircuit()
+        circuits = [QuantumCircuit()]
         if qpy_filename:
             with open(qpy_filename, "rb") as f:
-                circuit = qpy_serialization.load(f)[0]
+                circuits = cast(List[QuantumCircuit],
+                                qpy_serialization.load(f))
         return cls(
-            circuit=circuit,
+            circuits=circuits,
             c=dictionary["c"],
             p=dictionary["p"],
             q=dictionary["q"],

@@ -7,11 +7,11 @@ from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
 
-def encrypt(message: str, key: Key, scheme_parmas: SchemeParameters) -> Ciphertext:
+def encrypt(message: str, key: Key, scheme_params: SchemeParameters, qubits_per_circuit: int) -> Ciphertext:
     """Encrypts a message according to the values specified by a Key, producing a resulting Ciphertext."""
 
     # Step 1 - sample the values for the qubits to be encoded in the computational basis
-    r_restricted_i = random_bit_string(scheme_parmas.s)
+    r_restricted_i = random_bit_string(scheme_params.s)
 
     # Step 2 - compute the privacy-amplified one-time pad
     x = calculate_privacy_amplification_hash(
@@ -22,15 +22,16 @@ def encrypt(message: str, key: Key, scheme_parmas: SchemeParameters) -> Cipherte
         key.error_correction_matrix, r_restricted_i), key.d)
 
     # Step 4 - compute the error syndrome of r_restricted_i
-    q = xor(synd(r_restricted_i), key.e)
-    # q = "0" * scheme_parmas.mu
+    # q = xor(synd(r_restricted_i), key.e)
+    q = "0" * scheme_params.mu
 
     # Step 5 - prepare qubits
-    circuit = prepare_qubits(key.theta, r_restricted_i, key.r_restricted_i_bar)
-    return Ciphertext(circuit, xor(message, x, key.u), p, q)
+    circuits = prepare_qubits(key.theta, r_restricted_i,
+                              key.r_restricted_i_bar, qubits_per_circuit)
+    return Ciphertext(circuits, xor(message, x, key.u), p, q)
 
 
-def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamard_qubit_states: str) -> QuantumCircuit:
+def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamard_qubit_states: str, qubits_per_circuit: int) -> List[QuantumCircuit]:
     """Prepares the circuit that encodes all the qubits of a Ciphertext.
 
     Args:
@@ -48,26 +49,37 @@ def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamar
     """
     computational_iterator = iter(computational_qubit_states)
     hadamard_iterator = iter(hadamard_qubit_states)
-    circuit = QuantumCircuit(len(theta))
-    for i, basis in enumerate(theta):
-        if basis is Basis.COMPUTATIONAL:
-            state = next(computational_iterator)
-            if state == "0":
-                # |0>
-                pass
-            elif state == "1":
-                # |1>
-                circuit.x(i)
-        elif basis is Basis.HADAMARD:
-            state = next(hadamard_iterator)
-            if state == "0":
-                # |+>
-                circuit.h(i)
-            elif state == "1":
-                # |->
-                circuit.x(i)
-                circuit.h(i)
-    return circuit
+    circuits = []
+    circuit_lengths = [qubits_per_circuit] * (len(theta) // qubits_per_circuit)
+    if len(theta) % qubits_per_circuit > 0:
+        circuit_lengths.append(len(theta) % qubits_per_circuit)
+
+    basis_index = 0
+    for circuit_length in circuit_lengths:
+        current_circuit = QuantumCircuit(circuit_length)
+        for i in range(circuit_length):
+            basis = theta[basis_index]
+            if basis is Basis.COMPUTATIONAL:
+                state = next(computational_iterator)
+                if state == "0":
+                    # |0>
+                    pass
+                elif state == "1":
+                    # |1>
+                    current_circuit.x(i)
+            elif basis is Basis.HADAMARD:
+                state = next(hadamard_iterator)
+                if state == "0":
+                    # |+>
+                    current_circuit.h(i)
+                elif state == "1":
+                    # |->
+                    current_circuit.x(i)
+                    current_circuit.h(i)
+            basis_index += 1
+        circuits.append(current_circuit)
+
+    return circuits
 
 
 def calculate_privacy_amplification_hash(matrix: List[List[int]], inp: str) -> str:
