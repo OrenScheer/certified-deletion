@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 import json
 import os
 import pandas as pd
-from typing import List, Optional, Tuple, Dict, cast
+from typing import List, Optional, Dict, cast
 from qiskit import QuantumCircuit
 from states import Ciphertext, Key
 from scheme_parameters import SchemeParameters
@@ -25,6 +25,7 @@ class Experiment:
         execution_datetime: The time when this experiment was run.
         execution_shots: The number of times each test was run on the backend.
         backend_system: A string representing, in a suitable format, which backend system was used.
+        qubits_per_circuit: The maximum number of qubits encoded in each QuantumCircuit.
         optimization_level: The optimization level chosen to run the circuits on the backend.
         microsecond_delay: The time, in microseconds, between the preparation of the qubits and the first measurement.
         folder_path: The complete path to the local folder where this experiment is or will be stored.
@@ -39,13 +40,20 @@ class Experiment:
         raw_counts_test5: The combined measurements of test5.
         decryption_counts_test5: The measurements of the decryption in test5.
         deletion_counts_test5: The measurements of the deletion in test5.
-        circuits: A list of QuantumCircuits, where the first circuit is the qubit preparation, and each subsequent
-            circuit is the original circuit and transpiled circuit for each test.
+        circuits: A list of lists of QuantumCircuits, where the following is each list:
+            - The list of circuits to prepare the qubits.
+            - The list of circuits for the deletion test.
+            - The list of transpiled circuits for the deletion test.
+            - The list of circuits for the decryption test.
+            - The list of transpiled circuits for the decryption test.
+            - The list of circuits for the Breidbart test.
+            - The list of transpiled circuits for the Breidbart test.
     """
     experiment_id: str
     execution_datetime: datetime
     execution_shots: int
     backend_system: str
+    qubits_per_circuit: int
     optimization_level: int
     microsecond_delay: int
     folder_path: str
@@ -259,6 +267,7 @@ class Experiment:
                 "folder_path": self.folder_path,
                 "microsecond_delay": self.microsecond_delay,
                 "optimization_level": self.optimization_level,
+                "qubits_per_circuit": self.qubits_per_circuit,
             }))
 
         with open(f"{self.folder_path}/{parameters_filename}", "w") as f:
@@ -275,7 +284,7 @@ class Experiment:
 
         for i, filename in enumerate(circuit_filenames):
             with open(f"{self.folder_path}/{circuits_folder}/{filename}", "wb") as f:
-                qpy_serialization.dump(self.circuits[i], f)
+                qpy_serialization.dump(self.circuits[i], f)  # type: ignore
 
         export_counts(self.deletion_counts_test1,
                       csv_filename=f"{self.folder_path}/{test1_filename}", key_label="Deletion measurement")
@@ -307,6 +316,7 @@ class Experiment:
             backend_system = attributes_dict["backend_system"]
             microsecond_delay = attributes_dict["microsecond_delay"]
             optimization_level = attributes_dict["optimization_level"]
+            qubits_per_circuit = attributes_dict["qubits_per_circuit"]
         with open(f"{folder_path}/{parameters_filename}", "r") as params_file:
             parameters = SchemeParameters.from_json(params_file.read())
         with open(f"{folder_path}/{key_filename}", "r") as key_file:
@@ -351,6 +361,7 @@ class Experiment:
             microsecond_delay=microsecond_delay,
             circuits=circuits,
             optimization_level=optimization_level,
+            qubits_per_circuit=qubits_per_circuit,
         )
 
 

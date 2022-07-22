@@ -35,15 +35,15 @@ class SchemeParameters:
         """Generates a SchemeParameters object based on a security parameter."""
         def calculate_n() -> int:
             """Returns the length of the message."""
-            return 5
+            return 10
 
         def calculate_m() -> int:
             """Returns the total number of qubits."""
-            return 30
+            return 50
 
         def calculate_k() -> int:
             """Returns the number of qubits used for deletion."""
-            return 15
+            return 25
 
         def calculate_s() -> int:
             """Returns the number of qubits used as a one-time pad for encryption."""
