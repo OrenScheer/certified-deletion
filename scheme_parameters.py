@@ -10,7 +10,7 @@ from scipy.stats import binom
 
 @dataclass
 class SchemeParameters:
-    """A set of parameters defined for a specific experiment.
+    """A set of parameters for the BI20 scheme, defined for a specific experiment.
 
     Attributes:
         security_parameter_lambda: The security parameter.
