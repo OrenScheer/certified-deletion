@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-import json
 import os
 import pandas as pd
 from typing import List, Optional, Dict, cast
 from qiskit import QuantumCircuit
+from experiment_properties import ExperimentProperties
 from states import Ciphertext, Key
 from scheme_parameters import SchemeParameters
-from datetime import datetime
 from decryption_circuit import decrypt_results
 from verification_circuit import verify_deletion_counts
 from qiskit.circuit import qpy_serialization
 from qiskit.providers.models.backendproperties import Nduv
+from math import ceil
 
 
 @dataclass
@@ -22,48 +22,41 @@ class Experiment:
 
     Attributes:
         experiment_id: A unique string to reference this experiment.
-        execution_datetime: The time when this experiment was run.
-        execution_shots: The number of times each test was run on the backend.
-        backend_system: A string representing, in a suitable format, which backend system was used.
-        qubits_per_circuit: The maximum number of qubits encoded in each QuantumCircuit.
-        optimization_level: The optimization level chosen to run the circuits on the backend.
-        microsecond_delay: The time, in microseconds, between the preparation of the qubits and the first measurement.
+        experiment_properties: The Qiskit-related properties of this experiment.
         folder_path: The complete path to the local folder where this experiment is or will be stored.
-        parameters: The parameters describing this instance of the certified deletion scheme.
+        scheme_parameters: The parameters describing this instance of the certified deletion scheme.
         key: The key used for encryption.
         ciphertext: The encrypted state.
         message: The plaintext message.
+        base_circuits: A list of QuantumCircuits with just the qubit preparation for the ciphertext.
+        full_circuits: A list of lists of QuantumCircuits, where the following is each list:
+            - The list of circuits for the deletion test.
+            - The list of circuits for the decryption test.
+            - The list of circuits for the Breidbart test.
+        transpiled_circuits: A list of lists of QuantumCircuits, where the following is each list:
+            - The list of transpiled circuits for the deletion test.
+            - The list of transpiled circuits for the decryption test.
+            - The list of transpiled circuits for the Breidbart test.
         deletion_counts_test1: The measurements of the deletion in test1.
         decryption_counts_test2: The measurements of the decryption in test2.
         combined_counts_test3: The combined measurements of test3.
         combined_counts_test4: The combined measurements of test4.
-        raw_counts_test5: The combined measurements of test5.
-        decryption_counts_test5: The measurements of the decryption in test5.
-        deletion_counts_test5: The measurements of the deletion in test5.
-        circuits: A list of lists of QuantumCircuits, where the following is each list:
-            - The list of circuits to prepare the qubits.
-            - The list of circuits for the deletion test.
-            - The list of transpiled circuits for the deletion test.
-            - The list of circuits for the decryption test.
-            - The list of transpiled circuits for the decryption test.
-            - The list of circuits for the Breidbart test.
-            - The list of transpiled circuits for the Breidbart test.
+        combined_counts_test5: The combined measurements of test5.
     """
     experiment_id: str
-    execution_datetime: datetime
-    execution_shots: int
-    backend_system: str
-    qubits_per_circuit: int
-    optimization_level: int
-    microsecond_delay: int
+    experiment_properties: ExperimentProperties
+    number_of_circuits: int
     folder_path: str
-    parameters: SchemeParameters
+    scheme_parameters: SchemeParameters
     key: Key
     ciphertext: Ciphertext
     message: str
-    deletion_counts_test1: Dict[str, int]
-    decryption_counts_test2: Dict[str, int]
-    circuits: List[List[QuantumCircuit]]
+    base_circuits: List[QuantumCircuit]
+    full_circuits: List[List[QuantumCircuit]] = field(default_factory=list)
+    transpiled_circuits: List[List[QuantumCircuit]
+                              ] = field(default_factory=list)
+    deletion_counts_test1: Dict[str, int] = field(default_factory=dict)
+    decryption_counts_test2: Dict[str, int] = field(default_factory=dict)
     combined_counts_test3: Dict[str, int] = field(default_factory=dict)
     combined_counts_test4: Dict[str, int] = field(default_factory=dict)
     combined_counts_test5: Dict[str, int] = field(default_factory=dict)
@@ -80,13 +73,13 @@ class Experiment:
 
     def get_experiment_info(self) -> str:
         """Returns the basic information of this Experiment."""
-        output_string = f"System: {self.backend_system}\n"
-        output_string += f"Message length: {self.parameters.n}\n"
-        output_string += f"Total number of qubits: {self.parameters.m}\n"
-        output_string += f"Qubits for deletion: {self.parameters.k}\n"
-        output_string += f"Qubits used for message encryption: {self.parameters.s}\n"
-        output_string += f"Delay between qubit preparation and first measurement: {self.microsecond_delay} us\n"
-        output_string += f"Optimization level: {self.optimization_level}"
+        output_string = f"System: {self.experiment_properties.system}\n"
+        output_string += f"Message length: {self.scheme_parameters.n}\n"
+        output_string += f"Total number of qubits: {self.scheme_parameters.m}\n"
+        output_string += f"Qubits for deletion: {self.scheme_parameters.k}\n"
+        output_string += f"Qubits used for message encryption: {self.scheme_parameters.s}\n"
+        output_string += f"Delay between qubit preparation and first measurement: {self.experiment_properties.microsecond_delay} us\n"
+        output_string += f"Optimization level: {self.experiment_properties.optimization_level}"
         return output_string
 
     def get_test1_success_rate(self) -> float:
@@ -94,42 +87,42 @@ class Experiment:
         accepted_count, _, _, _ = verify_deletion_counts(
             self.deletion_counts_test1,
             self.key,
-            self.parameters
+            self.scheme_parameters
         )
-        return (accepted_count / self.execution_shots) * 100
+        return (accepted_count / self.experiment_properties.shots) * 100
 
     def get_test2_success_rate(self, error_correct=False) -> float:
         """Returns the percentage of successful decryptions for test2."""
         decryption_count, _, _ = decrypt_results(
             self.decryption_counts_test2, self.key, self.ciphertext, self.message, error_correct)
-        return (decryption_count / self.execution_shots) * 100
+        return (decryption_count / self.experiment_properties.shots) * 100
 
     def run_test_1(self) -> str:
         """Runs a test of honest deletion."""
         output_string = "-----TEST 1: HONEST DELETION-----\n"
         output_string += self.run_deletion_test(self.deletion_counts_test1)
-        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test1_success_rate()}"
+        output_string += f"\n\nExpected success rate: {self.scheme_parameters.get_expected_test1_success_rate()}"
         return output_string
 
     def run_test_2(self) -> str:
         """Runs a test of decryption."""
         output_string = "-----TEST 2: DECRYPTION-----\n"
         output_string += self.run_decryption_test(self.decryption_counts_test2)
-        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test2_success_rate()}"
+        output_string += f"\n\nExpected success rate: {self.scheme_parameters.get_expected_test2_success_rate()}"
         return output_string
 
     def run_test_3(self) -> str:
         """Runs a test of honest deletion, then attempted decryption."""
         output_string = "-----TEST 3: HONEST DELETION, THEN DECRYPTION-----\n"
         output_string += self.run_combined_test(self.combined_counts_test3)
-        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test3_success_rate()}"
+        output_string += f"\n\nExpected success rate: {self.scheme_parameters.get_expected_test3_success_rate()}"
         return output_string
 
     def run_test_4(self) -> str:
         """Runs a test of malicious deletion, then attempted decryption."""
         output_string = "-----TEST 4: MALICIOUS DELETION, THEN DECRYPTION-----\n"
         output_string += self.run_combined_test(self.combined_counts_test4)
-        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test4_success_rate()}"
+        output_string += f"\n\nExpected success rate: {self.scheme_parameters.get_expected_test4_success_rate()}"
         return output_string
 
     def run_test_5(self) -> str:
@@ -137,7 +130,7 @@ class Experiment:
         output_string = "-----TEST 5: TAMPER DETECTION-----\n"
         output_string += self.run_combined_flipped_test(
             self.combined_counts_test5)
-        output_string += f"\n\nExpected success rate: {self.parameters.get_expected_test5_success_rate()}"
+        output_string += f"\n\nExpected success rate: {self.scheme_parameters.get_expected_test5_success_rate()}"
         return output_string
 
     def run_deletion_test(self, deletion_counts: Dict[str, int]) -> str:
@@ -153,9 +146,9 @@ class Experiment:
         accepted_count, rejected_count, rejected_distances, _ = verify_deletion_counts(
             deletion_counts,
             self.key,
-            self.parameters
+            self.scheme_parameters
         )
-        return build_deletion_stats(accepted_count, rejected_count, rejected_distances, self.execution_shots)
+        return build_deletion_stats(accepted_count, rejected_count, rejected_distances, self.experiment_properties.shots)
 
     def run_decryption_test(self, decryption_counts: Dict[str, int]) -> str:
         """Runs the decryption circuit for a series of measurements.
@@ -173,7 +166,7 @@ class Experiment:
             self.ciphertext,
             self.message
         )
-        return build_decryption_stats(correct_count, incorrect_count, error_count, self.execution_shots)
+        return build_decryption_stats(correct_count, incorrect_count, error_count, self.experiment_properties.shots)
 
     def run_combined_test(self, combined_counts: Dict[str, int]) -> str:
         """Runs the deletion circuit followed by the decryption circuit for a series of two successive measurements.
@@ -191,10 +184,10 @@ class Experiment:
         accepted_count, rejected_count, rejected_distances, accepted_certificates = verify_deletion_counts(
             combined_counts,
             self.key,
-            self.parameters
+            self.scheme_parameters
         )
         output_string += build_deletion_stats(
-            accepted_count, rejected_count, rejected_distances, self.execution_shots)
+            accepted_count, rejected_count, rejected_distances, self.experiment_properties.shots)
 
         correct_count, incorrect_count, error_count = decrypt_results(
             combined_counts,
@@ -203,7 +196,7 @@ class Experiment:
             self.message
         )
         output_string += "\n\n" + build_decryption_stats(
-            correct_count, incorrect_count, error_count, self.execution_shots)
+            correct_count, incorrect_count, error_count, self.experiment_properties.shots)
 
         if accepted_count:
             output_string += "\n\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:\n"
@@ -242,15 +235,15 @@ class Experiment:
             self.message
         )
         output_string += build_decryption_stats(
-            correct_count, incorrect_count, error_count, self.execution_shots)
+            correct_count, incorrect_count, error_count, self.experiment_properties.shots)
 
         accepted_count, rejected_count, rejected_distances, _ = verify_deletion_counts(
             combined_counts,
             self.key,
-            self.parameters
+            self.scheme_parameters
         )
         output_string += "\n\n" + build_deletion_stats(
-            accepted_count, rejected_count, rejected_distances, self.execution_shots)
+            accepted_count, rejected_count, rejected_distances, self.experiment_properties.shots)
 
         return output_string
 
@@ -258,20 +251,11 @@ class Experiment:
         """Exports the values and results of this Experiment to a folder."""
         os.makedirs(self.folder_path, exist_ok=True)
         os.makedirs(f"{self.folder_path}/{circuits_folder}", exist_ok=True)
-        with open(f"{self.folder_path}/{experiment_attributes_filename}", "w") as f:
-            f.write(json.dumps({
-                "experiment_id": self.experiment_id,
-                "execution_datetime": self.execution_datetime.isoformat(),
-                "execution_shots": self.execution_shots,
-                "backend_system": self.backend_system,
-                "folder_path": self.folder_path,
-                "microsecond_delay": self.microsecond_delay,
-                "optimization_level": self.optimization_level,
-                "qubits_per_circuit": self.qubits_per_circuit,
-            }))
+        with open(f"{self.folder_path}/{experiment_properties_filename}", "w") as f:
+            f.write(self.experiment_properties.to_json())
 
         with open(f"{self.folder_path}/{parameters_filename}", "w") as f:
-            f.write(self.parameters.to_json())
+            f.write(self.scheme_parameters.to_json())
 
         with open(f"{self.folder_path}/{key_filename}", "w") as f:
             f.write(self.key.to_json())
@@ -282,9 +266,18 @@ class Experiment:
         with open(f"{self.folder_path}/{message_filename}", "w") as f:
             f.write(self.message)
 
-        for i, filename in enumerate(circuit_filenames):
+        with open(f"{self.folder_path}/{circuits_folder}/{base_circuits_filename}", "wb") as f:
+            qpy_serialization.dump(self.base_circuits, f)  # type: ignore
+
+        for i, filename in enumerate(full_circuit_filenames):
             with open(f"{self.folder_path}/{circuits_folder}/{filename}", "wb") as f:
-                qpy_serialization.dump(self.circuits[i], f)  # type: ignore
+                qpy_serialization.dump(
+                    self.full_circuits[i], f)  # type: ignore
+
+        for i, filename in enumerate(transpiled_circuit_filenames):
+            with open(f"{self.folder_path}/{circuits_folder}/{filename}", "wb") as f:
+                qpy_serialization.dump(
+                    self.transpiled_circuits[i], f)  # type: ignore
 
         export_counts(self.deletion_counts_test1,
                       csv_filename=f"{self.folder_path}/{test1_filename}", key_label="Deletion measurement")
@@ -307,18 +300,11 @@ class Experiment:
     @classmethod
     def reconstruct_experiment_from_folder(cls, folder_path: str) -> Experiment:
         """Returns an Experiment based on the files stored in the folder folder_path."""
-        with open(f"{folder_path}/{experiment_attributes_filename}", "r") as attributes_file:
-            attributes_dict = json.loads(attributes_file.read())
-            experiment_id = attributes_dict["experiment_id"]
-            execution_datetime = datetime.fromisoformat(
-                attributes_dict["execution_datetime"])
-            execution_shots = attributes_dict["execution_shots"]
-            backend_system = attributes_dict["backend_system"]
-            microsecond_delay = attributes_dict["microsecond_delay"]
-            optimization_level = attributes_dict["optimization_level"]
-            qubits_per_circuit = attributes_dict["qubits_per_circuit"]
+        with open(f"{folder_path}/{experiment_properties_filename}", "r") as properties_file:
+            experiment_properties = ExperimentProperties.from_json(
+                properties_file.read())
         with open(f"{folder_path}/{parameters_filename}", "r") as params_file:
-            parameters = SchemeParameters.from_json(params_file.read())
+            scheme_parameters = SchemeParameters.from_json(params_file.read())
         with open(f"{folder_path}/{key_filename}", "r") as key_file:
             key = Key.from_json(key_file.read())
         with open(f"{folder_path}/{ciphertext_filename}", "r") as ciphertext_file:
@@ -327,10 +313,19 @@ class Experiment:
         with open(f"{folder_path}/{message_filename}", "r") as message_file:
             message = message_file.read()
 
-        circuits = []
-        for filename in circuit_filenames:
+        with open(f"{folder_path}/{circuits_folder}/{base_circuits_filename}", "rb") as f:
+            base_circuits = cast(List[QuantumCircuit],
+                                 qpy_serialization.load(f))
+
+        full_circuits = []
+        for i, filename in enumerate(full_circuit_filenames):
             with open(f"{folder_path}/{circuits_folder}/{filename}", "rb") as f:
-                circuits.append(qpy_serialization.load(f))
+                full_circuits.append(qpy_serialization.load(f))
+
+        transpiled_circuits = []
+        for i, filename in enumerate(transpiled_circuit_filenames):
+            with open(f"{folder_path}/{circuits_folder}/{filename}", "rb") as f:
+                transpiled_circuits.append(qpy_serialization.load(f))
 
         deletion_counts_test1 = import_counts(
             f"{folder_path}/{test1_filename}")
@@ -344,10 +339,10 @@ class Experiment:
             f"{folder_path}/{test5_filename}")
 
         return cls(
-            experiment_id=experiment_id,
+            experiment_id=experiment_properties.experiment_id,
             folder_path=folder_path,
-            backend_system=backend_system,
-            parameters=parameters,
+            experiment_properties=experiment_properties,
+            scheme_parameters=scheme_parameters,
             key=key,
             ciphertext=ciphertext,
             message=message,
@@ -356,16 +351,15 @@ class Experiment:
             combined_counts_test3=combined_counts_test3,
             combined_counts_test4=combined_counts_test4,
             combined_counts_test5=combined_counts_test5,
-            execution_datetime=execution_datetime,
-            execution_shots=execution_shots,
-            microsecond_delay=microsecond_delay,
-            circuits=circuits,
-            optimization_level=optimization_level,
-            qubits_per_circuit=qubits_per_circuit,
+            base_circuits=base_circuits,
+            full_circuits=full_circuits,
+            transpiled_circuits=transpiled_circuits,
+            number_of_circuits=ceil(
+                scheme_parameters.m / experiment_properties.qubits_per_circuit),
         )
 
 
-experiment_attributes_filename = "experiment_attributes.txt"
+experiment_properties_filename = "experiment_attributes.txt"
 parameters_filename = "scheme_parameters.txt"
 key_filename = "key.txt"
 ciphertext_filename = "ciphertext.txt"
@@ -386,8 +380,10 @@ decryption_circuits_filename = "decryption_circuits.qpy"
 transpiled_decryption_circuits_filename = "transpiled_decryption_circuits.qpy"
 breidbart_circuits_filename = "breidbart_circuits.qpy"
 transpiled_breidbart_circuits_filename = "transpiled_breidbard_circuits.qpy"
-circuit_filenames = [base_circuits_filename, deletion_circuits_filename, transpiled_deletion_circuits_filename,
-                     decryption_circuits_filename, transpiled_decryption_circuits_filename, breidbart_circuits_filename, transpiled_breidbart_circuits_filename]
+full_circuit_filenames = [deletion_circuits_filename,
+                          decryption_circuits_filename,  breidbart_circuits_filename]
+transpiled_circuit_filenames = [transpiled_deletion_circuits_filename,
+                                transpiled_decryption_circuits_filename, transpiled_breidbart_circuits_filename]
 
 
 def build_deletion_stats(accepted_count: int, rejected_count: int, rejected_distances: Dict[int, int], total_count: int) -> str:
