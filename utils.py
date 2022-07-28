@@ -1,6 +1,7 @@
 """Utility functions used for various purposes in the simulation."""
 
-from typing import List
+import itertools
+from typing import Iterator, List
 import numpy as np
 
 
@@ -52,3 +53,27 @@ def hamming_weight(s: str) -> int:
 def hamming_distance(s1: str, s2: str) -> int:
     """Calculates the Hamming distance between two bit strings."""
     return hamming_weight(xor(s1, s2))
+
+
+def xor_multiply_matrix_with_bit_string(matrix: List[List[int]], bit_string: str) -> str:
+    """Multiplies a matrix (mod 2) with a bit string, returning a string, as described in family H_3 identified in CW79."""
+    list_to_xor = ["0" * len(matrix)]
+    for i in range(len(bit_string)):
+        if bit_string[i] == "1":
+            list_to_xor.append("".join(str(digit)
+                               for digit in [row[i] for row in matrix]))
+    return xor(*list_to_xor)
+
+
+def multiply_bit_string_with_matrix(bit_string: str, matrix: List[List[int]]):
+    return "".join(
+        str(i % 2) for i in np.matmul(
+            [list(int(a) for a in bit_string)], matrix  # type: ignore
+        ).tolist()[0]
+    )
+
+
+def generate_all_binary_strings(n: int) -> Iterator[str]:
+    """Yields all binary strings of length n."""
+    for tup in itertools.product("01", repeat=n):
+        yield "".join(tup)

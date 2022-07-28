@@ -1,8 +1,8 @@
 """The circuit and associated methods used by the sending party to encrypt a plaintext."""
 
 from typing import List, Tuple
-from utils import random_bit_string, xor
-from scheme_parameters import SchemeParameters
+from utils import random_bit_string, xor, xor_multiply_matrix_with_bit_string
+from scheme_parameters import SchemeParameters, synd_hamming
 from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
@@ -108,23 +108,3 @@ def calculate_error_correction_hash(matrix: List[List[int]], inp: str) -> str:
     """
     # inp is of length s, returns string of length tau
     return xor_multiply_matrix_with_bit_string(matrix, inp)
-
-
-def synd(inp: str) -> str:
-    """Calculates the error syndromes of a given input string."""
-    parity_check_matrix = [
-        [1, 0, 1, 0, 1, 0, 1],
-        [0, 1, 1, 0, 0, 1, 1],
-        [0, 0, 0, 1, 1, 1, 1]
-    ]
-    return xor_multiply_matrix_with_bit_string(parity_check_matrix, inp)
-
-
-def xor_multiply_matrix_with_bit_string(matrix: List[List[int]], bit_string: str) -> str:
-    """Multiplies a matrix (mod 2) with a bit string, returning a string, as described in family H_3 identified in CW79."""
-    list_to_xor = ["0" * len(matrix)]
-    for i in range(len(bit_string)):
-        if bit_string[i] == "1":
-            list_to_xor.append("".join(str(digit)
-                               for digit in [row[i] for row in matrix]))
-    return xor(*list_to_xor)
