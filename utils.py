@@ -1,7 +1,7 @@
 """Utility functions used for various purposes in the simulation."""
 
 import itertools
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 import numpy as np
 
 
@@ -73,7 +73,9 @@ def multiply_bit_string_with_matrix(bit_string: str, matrix: List[List[int]]):
     )
 
 
-def generate_all_binary_strings(n: int) -> Iterator[str]:
+def generate_all_binary_strings(n: int, max_hamming_weight: Optional[int] = None) -> Iterator[str]:
     """Yields all binary strings of length n."""
     for tup in itertools.product("01", repeat=n):
-        yield "".join(tup)
+        next_string = "".join(tup)
+        if max_hamming_weight is None or hamming_weight(next_string) <= max_hamming_weight:
+            yield "".join(tup)

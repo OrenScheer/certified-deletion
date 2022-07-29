@@ -2,7 +2,7 @@
 
 from typing import List, Tuple
 from utils import random_bit_string, xor, xor_multiply_matrix_with_bit_string
-from scheme_parameters import SchemeParameters, synd_hamming
+from scheme_parameters import SchemeParameters, synd_hamming, synd_reed_muller
 from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
@@ -22,8 +22,8 @@ def encrypt(message: str, key: Key, scheme_params: SchemeParameters, qubits_per_
         key.error_correction_matrix, r_restricted_i), key.d)
 
     # Step 4 - compute the error syndrome of r_restricted_i
-    # q = xor(synd(r_restricted_i), key.e)
-    q = "0" * scheme_params.mu
+    q = xor(synd_reed_muller(r_restricted_i), key.e)
+    # q = "0" * scheme_params.mu
 
     # Step 5 - prepare qubits
     circuits = prepare_qubits(key.theta, r_restricted_i,

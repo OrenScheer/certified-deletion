@@ -5,7 +5,7 @@ from qiskit import QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash
 from utils import xor
-from scheme_parameters import corr_hamming
+from scheme_parameters import corr_hamming, corr_reed_muller
 import itertools
 
 
@@ -24,7 +24,7 @@ def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> List[QuantumC
     return decryption_circuits
 
 
-def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Ciphertext, message: str, error_correct: bool = False) -> Tuple[int, int, int]:
+def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Ciphertext, message: str, error_correct: bool = True) -> Tuple[int, int, int]:
     """Processes and decrypts the candidate decryption measurements for a sequence of experimental tests.
 
     Outputs relevant statistics.
@@ -55,10 +55,8 @@ def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Cipherte
             relevant_bits = "".join(
                 [ch for i, ch in enumerate(measurement) if key.theta[i] is Basis.COMPUTATIONAL])
         if error_correct:
-            relevant_bits = corr_hamming(
+            relevant_bits = corr_reed_muller(
                 relevant_bits, xor(ciphertext.q, key.e))
-            # relevant_bits = corr_with_hash(relevant_bits, xor(
-            #     ciphertext.q, key.e), key.error_correction_matrix, xor(ciphertext.p, key.d))
         error_corretion_hash = xor(calculate_error_correction_hash(
             key.error_correction_matrix, relevant_bits), key.d)
         if error_corretion_hash != ciphertext.p:
