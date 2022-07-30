@@ -108,6 +108,7 @@ class ExperimentManager:
                 key = base_experiment.key
                 message = base_experiment.message
                 ciphertext = base_experiment.ciphertext
+                encoded_in_qubits = base_experiment.encoded_in_qubits
                 for circuit in ciphertext.circuits:
                     # Remove any existing delay in case it is of a different length than the current properties
                     circuit.data = [instruction for instruction in circuit.data if not isinstance(
@@ -119,7 +120,7 @@ class ExperimentManager:
                 # Create new states
                 key = Key.generate_key(scheme_parameters)
                 message = random_bit_string(scheme_parameters.n)
-                ciphertext = encrypt(
+                ciphertext, encoded_in_qubits = encrypt(
                     message, key, scheme_parameters, specific_exp_properties.qubits_per_circuit)
                 if specific_exp_properties.microsecond_delay > 0:
                     for circuit in ciphertext.circuits:
@@ -140,4 +141,5 @@ class ExperimentManager:
                 message=message,
                 base_circuits=[circuit.copy()
                                for circuit in ciphertext.circuits],
+                encoded_in_qubits=encoded_in_qubits,
             ))

@@ -28,6 +28,7 @@ class Experiment:
         key: The key used for encryption.
         ciphertext: The encrypted state.
         message: The plaintext message.
+        encoded_in_qubits: The bit string encoded in the quantum part of the circuit (regardless of basis).
         base_circuits: A list of QuantumCircuits with just the qubit preparation for the ciphertext.
         full_circuits: A list of lists of QuantumCircuits, where the following is each list:
             - The list of circuits for the deletion test.
@@ -51,6 +52,7 @@ class Experiment:
     key: Key
     ciphertext: Ciphertext
     message: str
+    encoded_in_qubits: str
     base_circuits: List[QuantumCircuit]
     full_circuits: List[List[QuantumCircuit]] = field(default_factory=list)
     transpiled_circuits: List[List[QuantumCircuit]
@@ -266,6 +268,9 @@ class Experiment:
         with open(f"{self.folder_path}/{message_filename}", "w") as f:
             f.write(self.message)
 
+        with open(f"{self.folder_path}/{encoded_filename}", "w") as f:
+            f.write(self.encoded_in_qubits)
+
         with open(f"{self.folder_path}/{circuits_folder}/{base_circuits_filename}", "wb") as f:
             qpy_serialization.dump(self.base_circuits, f)  # type: ignore
 
@@ -312,6 +317,8 @@ class Experiment:
                 ciphertext_file.read(), qpy_filename=f"{folder_path}/{circuits_folder}/{base_circuits_filename}")
         with open(f"{folder_path}/{message_filename}", "r") as message_file:
             message = message_file.read()
+        with open(f"{folder_path}/{encoded_filename}", "r") as encoded_file:
+            encoded_in_qubits = encoded_file.read()
 
         with open(f"{folder_path}/{circuits_folder}/{base_circuits_filename}", "rb") as f:
             base_circuits = cast(List[QuantumCircuit],
@@ -356,6 +363,7 @@ class Experiment:
             transpiled_circuits=transpiled_circuits,
             number_of_circuits=ceil(
                 scheme_parameters.m / experiment_properties.qubits_per_circuit),
+            encoded_in_qubits=encoded_in_qubits,
         )
 
 
@@ -371,6 +379,7 @@ test4_filename = "test4-raw-counts.csv"
 test5_filename = "test5-raw-counts.csv"
 results_filename = "results.txt"
 qubit_properties_filename = "qubits.csv"
+encoded_filename = "encoded_in_qubits.txt"
 
 circuits_folder = "circuits"
 base_circuits_filename = "base_circuits.qpy"

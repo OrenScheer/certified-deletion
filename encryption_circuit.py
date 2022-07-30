@@ -7,8 +7,20 @@ from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
 
 
-def encrypt(message: str, key: Key, scheme_params: SchemeParameters, qubits_per_circuit: int) -> Ciphertext:
-    """Encrypts a message according to the values specified by a Key, producing a resulting Ciphertext."""
+def encrypt(message: str, key: Key, scheme_params: SchemeParameters, qubits_per_circuit: int) -> Tuple[Ciphertext, str]:
+    """Encrypts a message according to the values specified by a Key.
+
+    Args:
+        message: The message to encrypt.
+        key: The key to use to encrypt the message.
+        scheme_params: The parameters for this instance of the BI20 scheme.
+        qubits_per_circuit: The number of qubits being encoded in each quantum circuit.
+
+    Returns:
+        A tuple consisting of a Ciphertext and the string with the classical bits encoded in the quantum part of the
+        ciphertext. The second tuple item is for debugging and analysis, and is not passed on with the ciphertext to
+        the recipient.
+    """
 
     # Step 1 - sample the values for the qubits to be encoded in the computational basis
     r_restricted_i = random_bit_string(scheme_params.s)
@@ -26,12 +38,12 @@ def encrypt(message: str, key: Key, scheme_params: SchemeParameters, qubits_per_
     # q = "0" * scheme_params.mu
 
     # Step 5 - prepare qubits
-    circuits = prepare_qubits(key.theta, r_restricted_i,
-                              key.r_restricted_i_bar, qubits_per_circuit)
-    return Ciphertext(circuits, xor(message, x, key.u), p, q)
+    circuits, encoded_in_qubits = prepare_qubits(key.theta, r_restricted_i,
+                                                 key.r_restricted_i_bar, qubits_per_circuit)
+    return Ciphertext(circuits, xor(message, x, key.u), p, q), encoded_in_qubits
 
 
-def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamard_qubit_states: str, qubits_per_circuit: int) -> List[QuantumCircuit]:
+def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamard_qubit_states: str, qubits_per_circuit: int) -> Tuple[List[QuantumCircuit], str]:
     """Prepares the circuit that encodes all the qubits of a Ciphertext.
 
     Args:
@@ -44,8 +56,10 @@ def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamar
             to the ith 1 in theta.
 
     Returns:
-        A QuantumCircuit containing the initialized and prepared qubits. Qubit q_i corresponds to index i
-        in theta.
+        A tuple, where:
+            - The first item is a list of QuantumCircuits containing the initialized and prepared qubits.
+            - The second item is the string, for debugging and analysis purposes, of what was encoded
+                in the quantum part of the ciphertext.
     """
     computational_iterator = iter(computational_qubit_states)
     hadamard_iterator = iter(hadamard_qubit_states)
@@ -55,12 +69,14 @@ def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamar
         circuit_lengths.append(len(theta) % qubits_per_circuit)
 
     basis_index = 0
+    encoded_in_qubits = ""
     for circuit_length in circuit_lengths:
         current_circuit = QuantumCircuit(circuit_length)
         for i in range(circuit_length):
             basis = theta[basis_index]
             if basis is Basis.COMPUTATIONAL:
                 state = next(computational_iterator)
+                encoded_in_qubits += state
                 if state == "0":
                     # |0>
                     pass
@@ -69,6 +85,7 @@ def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamar
                     current_circuit.x(i)
             elif basis is Basis.HADAMARD:
                 state = next(hadamard_iterator)
+                encoded_in_qubits += state
                 if state == "0":
                     # |+>
                     current_circuit.h(i)
@@ -79,7 +96,7 @@ def prepare_qubits(theta: Tuple[Basis], computational_qubit_states: str, hadamar
             basis_index += 1
         circuits.append(current_circuit)
 
-    return circuits
+    return circuits, encoded_in_qubits
 
 
 def calculate_privacy_amplification_hash(matrix: List[List[int]], inp: str) -> str:
