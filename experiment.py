@@ -96,7 +96,7 @@ class Experiment:
     def get_test2_success_rate(self, error_correct=False) -> float:
         """Returns the percentage of successful decryptions for test2."""
         decryption_count, _, _ = decrypt_results(
-            self.decryption_counts_test2, self.key, self.ciphertext, self.message, error_correct)
+            self.decryption_counts_test2, self.key, self.ciphertext, self.message, self.scheme_parameters, error_correct)
         return (decryption_count / self.experiment_properties.shots) * 100
 
     def run_test_1(self) -> str:
@@ -166,7 +166,8 @@ class Experiment:
             decryption_counts,
             self.key,
             self.ciphertext,
-            self.message
+            self.message,
+            self.scheme_parameters
         )
         return build_decryption_stats(correct_count, incorrect_count, error_count, self.experiment_properties.shots)
 
@@ -195,7 +196,8 @@ class Experiment:
             combined_counts,
             self.key,
             self.ciphertext,
-            self.message
+            self.message,
+            self.scheme_parameters
         )
         output_string += "\n\n" + build_decryption_stats(
             correct_count, incorrect_count, error_count, self.experiment_properties.shots)
@@ -209,7 +211,8 @@ class Experiment:
                 accepted_deletion_decryption_counts,
                 self.key,
                 self.ciphertext,
-                self.message
+                self.message,
+                self.scheme_parameters
             )
             output_string += build_decryption_stats(doubly_correct_count, incorrect_decrypt_only_count,
                                                     error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
@@ -234,7 +237,8 @@ class Experiment:
             combined_counts,
             self.key,
             self.ciphertext,
-            self.message
+            self.message,
+            self.scheme_parameters
         )
         output_string += build_decryption_stats(
             correct_count, incorrect_count, error_count, self.experiment_properties.shots)

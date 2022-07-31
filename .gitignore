@@ -132,6 +132,9 @@ dmypy.json
 data/
 data_export.zip
 
+# Error correcting codes - only the zip file is included
+error_correcting_codes/
+
 # IDE configuration
 .idea/
 .vscode/
