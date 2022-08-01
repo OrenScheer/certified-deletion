@@ -95,9 +95,10 @@ class Experiment:
 
     def get_test2_success_rate(self, error_correct=False) -> float:
         """Returns the percentage of successful decryptions for test2."""
-        decryption_count, _, _ = decrypt_results(
+        success_with_flag, success_no_flag, _, _ = decrypt_results(
             self.decryption_counts_test2, self.key, self.ciphertext, self.message, self.scheme_parameters, error_correct)
-        return (decryption_count / self.experiment_properties.shots) * 100
+        correct_decryption_count = success_no_flag + success_with_flag
+        return (correct_decryption_count / self.experiment_properties.shots) * 100
 
     def run_test_1(self) -> str:
         """Runs a test of honest deletion."""
@@ -162,14 +163,14 @@ class Experiment:
         Returns:
             A string containing the results of this test.
         """
-        correct_count, incorrect_count, error_count = decrypt_results(
+        correct_with_flag, correct_no_flag, incorrect_with_flag, incorrect_no_flag = decrypt_results(
             decryption_counts,
             self.key,
             self.ciphertext,
             self.message,
             self.scheme_parameters
         )
-        return build_decryption_stats(correct_count, incorrect_count, error_count, self.experiment_properties.shots)
+        return build_decryption_stats(correct_with_flag, correct_no_flag, incorrect_with_flag, incorrect_no_flag, self.experiment_properties.shots)
 
     def run_combined_test(self, combined_counts: Dict[str, int]) -> str:
         """Runs the deletion circuit followed by the decryption circuit for a series of two successive measurements.
@@ -192,7 +193,7 @@ class Experiment:
         output_string += build_deletion_stats(
             accepted_count, rejected_count, rejected_distances, self.experiment_properties.shots)
 
-        correct_count, incorrect_count, error_count = decrypt_results(
+        correct_with_flag, correct_no_flag, incorrect_with_flag, incorrect_no_flag = decrypt_results(
             combined_counts,
             self.key,
             self.ciphertext,
@@ -200,22 +201,22 @@ class Experiment:
             self.scheme_parameters
         )
         output_string += "\n\n" + build_decryption_stats(
-            correct_count, incorrect_count, error_count, self.experiment_properties.shots)
+            correct_with_flag, correct_no_flag, incorrect_with_flag, incorrect_no_flag, self.experiment_properties.shots)
 
         if accepted_count:
             output_string += "\n\nOf the measurements where the proof of deletion was accepted, the following are the decryption statistics:\n"
 
             accepted_deletion_decryption_counts = {
                 key: val for key, val in combined_counts.items() if key in accepted_certificates}
-            doubly_correct_count, incorrect_decrypt_only_count, error_decrypt_only_count = decrypt_results(
+            d_correct_with_flag, d_correct_no_flag, d_incorrect_with_flag, d_incorrect_no_flag = decrypt_results(
                 accepted_deletion_decryption_counts,
                 self.key,
                 self.ciphertext,
                 self.message,
                 self.scheme_parameters
             )
-            output_string += build_decryption_stats(doubly_correct_count, incorrect_decrypt_only_count,
-                                                    error_decrypt_only_count, sum(accepted_deletion_decryption_counts.values()))
+            output_string += build_decryption_stats(d_correct_with_flag, d_correct_no_flag, d_incorrect_with_flag,
+                                                    d_incorrect_no_flag, sum(accepted_deletion_decryption_counts.values()))
         return output_string
 
     def run_combined_flipped_test(self, combined_counts: Dict[str, int]) -> str:
@@ -233,15 +234,15 @@ class Experiment:
             A string containing the combined results of the decryption and deletion.
         """
         output_string = ""
-        correct_count, incorrect_count, error_count = decrypt_results(
+        correct_with_flag, correct_no_flag, incorrect_with_flag, incorrect_no_flag = decrypt_results(
             combined_counts,
             self.key,
             self.ciphertext,
             self.message,
             self.scheme_parameters
         )
-        output_string += build_decryption_stats(
-            correct_count, incorrect_count, error_count, self.experiment_properties.shots)
+        output_string += build_decryption_stats(correct_with_flag, correct_no_flag,
+                                                incorrect_with_flag, incorrect_no_flag, self.experiment_properties.shots)
 
         accepted_count, rejected_count, rejected_distances, _ = verify_deletion_counts(
             combined_counts,
@@ -424,23 +425,27 @@ def build_deletion_stats(accepted_count: int, rejected_count: int, rejected_dist
     return output_string.strip()
 
 
-def build_decryption_stats(correct_count: int, incorrect_count: int, error_count: int, total_count: int) -> str:
+def build_decryption_stats(correct_with_flag: int, correct_no_flag: int, incorrect_with_flag: int, incorrect_no_flag: int, total_count: int) -> str:
     """Returns the relevant statistics of a decryption test.
     Args:
-        correct_count: The number of times the plaintext was correctly decrypted.
-        incorrect_count: The number of times the plaintext resulting from the decryption circuit did 
-            not match the plaintext originally encrypted.
-        error_count: The number of times the decryption circuit raised a flag that an error had been
-            detected in the decryption process.
-        total_count: The number of total decryption attempts for this test.
+        correct_with_flag: The number of times the plaintext was correctly decrypted, and the error flag was raised.
+        correct_no_flag: The number of times the plaintext was correctly decrypted, with no error flag raised.
+        incorrect_with_flag: The number of times the plaintext was unsuccessfully decrypted, and the error flag was raised.
+        incorrect_no_flag: The number of times the plaintext was unsuccessfully decrypted, with no error flag raised.
+        total_count: The number of total verification attempts for this test.
 
     Returns:
         A string containing the percentage of successful, unsuccessful, and error-detected decryption attempts.
     """
+    correct_count = correct_no_flag + correct_with_flag
+    incorrect_count = incorrect_no_flag + incorrect_with_flag
     output_string = ""
     output_string += f"Correct message decrypted: {correct_count}/{total_count} ({(correct_count / total_count)*100}%)\n"
+    output_string += f"  - Error detected during decryption process (hashes didn't match): {correct_with_flag}/{total_count} ({(correct_with_flag / total_count)*100}%)\n"
+    output_string += f"  - No error detected during decryption process: {correct_no_flag}/{total_count} ({(correct_no_flag / total_count)*100}%)\n"
     output_string += f"Incorrect message decrypted: {incorrect_count}/{total_count} ({(incorrect_count / total_count)*100}%)\n"
-    output_string += f"Error detected during decryption process (hashes didn't match): {error_count}/{total_count} ({(error_count / total_count)*100}%)\n"
+    output_string += f"  - Error detected during decryption process (hashes didn't match): {incorrect_with_flag}/{total_count} ({(incorrect_with_flag / total_count)*100}%)\n"
+    output_string += f"  - No error detected during decryption process: {incorrect_no_flag}/{total_count} ({(incorrect_no_flag / total_count)*100}%)\n"
     return output_string.strip()
 
 

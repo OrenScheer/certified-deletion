@@ -1,5 +1,6 @@
 """The circuit and associated methods that are used to decrypt a given ciphertext."""
 
+from distutils.log import error
 from typing import Iterator, List, Tuple, Dict
 from qiskit import QuantumCircuit
 from states import Basis, Key, Ciphertext
@@ -24,10 +25,8 @@ def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> List[QuantumC
     return decryption_circuits
 
 
-def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Ciphertext, message: str, scheme_parameters: SchemeParameters, error_correct: bool = True) -> Tuple[int, int, int]:
+def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Ciphertext, message: str, scheme_parameters: SchemeParameters, error_correct: bool = True) -> Tuple[int, int, int, int]:
     """Processes and decrypts the candidate decryption measurements for a sequence of experimental tests.
-
-    Outputs relevant statistics.
 
     Args:
         measurements: A dictionary whose keys are the measurements of all the qubits by the receiving
@@ -36,36 +35,63 @@ def decrypt_results(measurements: Dict[str, int], key: Key, ciphertext: Cipherte
         key: The key to be used in the decryption circuit.
         ciphertext: The ciphertext that the receiving party possesses.
         message: The original plaintext, to compare with the candidate decryption.
+        scheme_parameters: The parameters of this instance of the BI20 scheme.
         error_correct: Whether or not to apply the error correction procedure.
 
     Returns:
-        A tuple (correct_count, incorrect_count, error_count) where correct_count is the number of
-        correctly-decrypted messages, incorrect_count is the number of incorrectly-decrypted messages,
-        and error_count is the number of times the decryption circuit raised an error flag.
+        A tuple (correct_decryption_with_error_flag, correct_decryption_no_error_flag, incorrect_decryption_with_error_flag,
+        incorrect_decryption_no_error_flag) where each value is the count of how many times that outcome occurred using
+        the provided measurements.
     """
-    correct_decryption_count = 0
-    incorrect_decryption_count = 0
-    errored_decryption_count = 0
+    correct_decryption_with_error_flag = 0
+    correct_decryption_no_error_flag = 0
+    incorrect_decryption_with_error_flag = 0
+    incorrect_decryption_no_error_flag = 0
     for measurement, count in measurements.items():
-        if len(measurement) == key.theta.count(Basis.COMPUTATIONAL):
-            # Only the computational basis qubits were measured
-            relevant_bits = measurement
-        else:
-            # All the qubits were measured
-            relevant_bits = "".join(
-                [ch for i, ch in enumerate(measurement) if key.theta[i] is Basis.COMPUTATIONAL])
-        if error_correct:
-            relevant_bits = scheme_parameters.corr(
-                relevant_bits, xor(ciphertext.q, key.e))
-        error_corretion_hash = xor(calculate_error_correction_hash(
-            key.error_correction_matrix, relevant_bits), key.d)
-        if error_corretion_hash != ciphertext.p:
-            errored_decryption_count += 1
-        x_prime = calculate_privacy_amplification_hash(
-            key.privacy_amplification_matrix, relevant_bits)
-        decrypted_string = xor(ciphertext.c, x_prime, key.u)
-        if decrypted_string == message:
-            correct_decryption_count += count
-        else:
-            incorrect_decryption_count += count
-    return correct_decryption_count, incorrect_decryption_count, errored_decryption_count
+        successful_decryption, error_flag = decrypt_single_result(
+            measurement, key, ciphertext, message, scheme_parameters, error_correct)
+        if successful_decryption and error_flag:
+            correct_decryption_with_error_flag += count
+        elif successful_decryption and not error_flag:
+            correct_decryption_no_error_flag += count
+        elif not successful_decryption and error_flag:
+            incorrect_decryption_with_error_flag += count
+        elif not successful_decryption and not error_flag:
+            incorrect_decryption_no_error_flag += count
+    return correct_decryption_with_error_flag, correct_decryption_no_error_flag, incorrect_decryption_with_error_flag, incorrect_decryption_no_error_flag
+
+
+def decrypt_single_result(measurement: str, key: Key, ciphertext: Ciphertext, message: str, scheme_parameters: SchemeParameters, error_correct: bool) -> Tuple[bool, bool]:
+    """Decrypts a single measurement from a decryption circuit.
+
+    Args:
+        measurement: A string which is either a measurement of all the qubits, or just the one-time pad qubits.
+        key: The key to be used in the decryption circuit.
+        ciphertext: The ciphertext that the receiving party possesses.
+        message: The original plaintext, to compare with the candidate decryption.
+        scheme_parameters: The parameters of this instance of the BI20 scheme.
+        error_correct: Whether or not to apply the error correction procedure.
+
+    Returns:
+        A tuple of two boolean values (successful_decryption, error_flag), where successful_decryption
+        is True if following the decryption procuedure resulted in recovering the correct plaintext,
+        and where error_flag is True if the error correction hash did not match.
+    """
+    if len(measurement) == key.theta.count(Basis.COMPUTATIONAL):
+        # Only the computational basis qubits were measured
+        relevant_bits = measurement
+    else:
+        # All the qubits were measured
+        relevant_bits = "".join(
+            [ch for i, ch in enumerate(measurement) if key.theta[i] is Basis.COMPUTATIONAL])
+    if error_correct:
+        relevant_bits = scheme_parameters.corr(
+            relevant_bits, xor(ciphertext.q, key.e))
+    error_correction_hash = xor(calculate_error_correction_hash(
+        key.error_correction_matrix, relevant_bits), key.d)
+    error_flag = error_correction_hash != ciphertext.p
+    x_prime = calculate_privacy_amplification_hash(
+        key.privacy_amplification_matrix, relevant_bits)
+    decrypted_string = xor(ciphertext.c, x_prime, key.u)
+    successful_decryption = decrypted_string == message
+    return successful_decryption, error_flag
