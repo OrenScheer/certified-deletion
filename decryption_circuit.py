@@ -1,13 +1,11 @@
 """The circuit and associated methods that are used to decrypt a given ciphertext."""
 
-from distutils.log import error
-from typing import Iterator, List, Tuple, Dict
+from typing import List, Tuple, Dict
 from qiskit import QuantumCircuit
 from states import Basis, Key, Ciphertext
 from encryption_circuit import calculate_error_correction_hash, calculate_privacy_amplification_hash
 from utils import xor
 from scheme_parameters import SchemeParameters
-import itertools
 
 
 def create_decryption_circuit(key: Key, ciphertext: Ciphertext) -> List[QuantumCircuit]:
