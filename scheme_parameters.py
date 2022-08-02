@@ -48,7 +48,7 @@ class SchemeParameters:
         """Generates a SchemeParameters object based on a security parameter."""
         def calculate_n() -> int:
             """Returns the length of the message."""
-            return 1
+            return 8
 
         def calculate_m() -> int:
             """Returns the total number of qubits."""
@@ -56,27 +56,27 @@ class SchemeParameters:
 
         def calculate_k() -> int:
             """Returns the number of qubits used for deletion."""
-            return 250
+            return 714
 
         def calculate_s() -> int:
             """Returns the number of qubits used as a one-time pad for encryption."""
-            return 128
+            return 150
 
         def calculate_tau() -> int:
             """Returns the length of the error correction hash."""
-            return 3
+            return 0
 
         def calculate_mu() -> int:
             """Returns the length of the error syndromes."""
-            return 29
+            return 40
 
         def calculate_delta() -> float:
             """Returns the threshold rate for the verification check."""
-            return 0.0481
+            return 0.05
 
         def get_error_correcting_code_name() -> str:
             """Returns the name of the error correcting code."""
-            return "reed_muller_4_7"
+            return "hamming_4"
 
         return cls(
             security_parameter_lambda=security_parameter_lambda,
@@ -131,9 +131,30 @@ class SchemeParameters:
         return expected_decryption_range, expected_deletion_success
 
     def synd(self, inp: str) -> str:
-        return multiply_bit_string_with_matrix(inp, self.H_transpose)
+        codeword_length = len(self.H_transpose)
+        ans = ""
+        for i in range(0, len(inp), codeword_length):
+            ans += multiply_bit_string_with_matrix(
+                inp[i:i+codeword_length], self.H_transpose)
+        return ans
 
     def corr(self, inp: str, syndrome: str) -> str:
+        codeword_length = len(self.H_transpose)
+        syndrome_length = len(self.H_transpose[0])
+        ans = ""
+        codeword_indices = [i for i in range(
+            codeword_length, len(inp) + 1, codeword_length)]
+        syndrome_indices = [i for i in range(
+            syndrome_length, len(syndrome) + 1, syndrome_length)]
+        codeword_start = syndrome_start = 0
+        for codeword_end, syndrome_end in zip(codeword_indices, syndrome_indices):
+            ans += self.corr_single_block(inp[codeword_start:codeword_end],
+                                          syndrome[syndrome_start:syndrome_end])
+            codeword_start = codeword_end
+            syndrome_start = syndrome_end
+        return ans
+
+    def corr_single_block(self, inp: str, syndrome: str) -> str:
         new_syndrome = xor(multiply_bit_string_with_matrix(
             inp, self.H_transpose), syndrome)
         if new_syndrome in self.syndrome_table:
@@ -148,6 +169,7 @@ class SchemeParameters:
         dictionary = vars(self).copy()
         dictionary.pop("parity_check_matrix", None)
         dictionary.pop("syndrome_table", None)
+        dictionary.pop("H_transpose", None)
         return json.dumps(dictionary)
 
     @classmethod
