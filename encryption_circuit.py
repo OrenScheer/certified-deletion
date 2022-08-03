@@ -35,7 +35,6 @@ def encrypt(message: str, key: Key, scheme_parameters: SchemeParameters, qubits_
 
     # Step 4 - compute the error syndrome of r_restricted_i
     q = xor(scheme_parameters.synd(r_restricted_i), key.e)
-    # q = "0" * scheme_params.mu
 
     # Step 5 - prepare qubits
     circuits, encoded_in_qubits = prepare_qubits(key.theta, r_restricted_i,
