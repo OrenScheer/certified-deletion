@@ -129,9 +129,9 @@ class Experiment:
         return output_string
 
     def run_test_5(self) -> str:
-        """Runs a test of tamper detection."""
-        output_string = "-----TEST 5: TAMPER DETECTION-----\n"
-        output_string += self.run_combined_flipped_test(
+        """Runs a test of tamper-evident decryption."""
+        output_string = "-----TEST 5: TAMPER-EVIDENT DECRYPTION-----\n"
+        output_string += self.run_tamper_evidence_test(
             self.combined_counts_test5)
         output_string += f"\n\nExpected success rate: {self.scheme_parameters.get_expected_test5_success_rate()}"
         return output_string
@@ -219,7 +219,7 @@ class Experiment:
                                                     d_incorrect_no_flag, sum(accepted_deletion_decryption_counts.values()))
         return output_string
 
-    def run_combined_flipped_test(self, combined_counts: Dict[str, int]) -> str:
+    def run_tamper_evidence_test(self, combined_counts: Dict[str, int]) -> str:
         """Runs the decryption circuit followed by the deletion circuit for a series of two successive measurements.
 
         The deletion results are interpreted as checking for tampering. If the deletion certificate
@@ -234,24 +234,27 @@ class Experiment:
             A string containing the combined results of the decryption and deletion.
         """
         output_string = ""
-        correct_with_flag, correct_no_flag, incorrect_with_flag, incorrect_no_flag = decrypt_results(
+
+        # Run deletion first, since we get the accepted certificates
+        _, _, _, accepted_certificates = verify_deletion_counts(
             combined_counts,
+            self.key,
+            self.scheme_parameters
+        )
+
+        accepted_deletion_decryption_counts = {
+            key: val for key, val in combined_counts.items() if key in accepted_certificates}
+        d_correct_with_flag, d_correct_no_flag, _, _ = decrypt_results(
+            accepted_deletion_decryption_counts,
             self.key,
             self.ciphertext,
             self.message,
             self.scheme_parameters
         )
-        output_string += build_decryption_stats(correct_with_flag, correct_no_flag,
-                                                incorrect_with_flag, incorrect_no_flag, self.experiment_properties.shots)
-
-        accepted_count, rejected_count, rejected_distances, _ = verify_deletion_counts(
-            combined_counts,
-            self.key,
-            self.scheme_parameters
-        )
-        output_string += "\n\n" + build_deletion_stats(
-            accepted_count, rejected_count, rejected_distances, self.experiment_properties.shots)
-
+        doubly_correct_count = d_correct_with_flag + d_correct_no_flag
+        doubly_correct_string = f"{doubly_correct_count}/{self.experiment_properties.shots}"
+        percent_string = f"{(doubly_correct_count / self.experiment_properties.shots)*100}%"
+        output_string += f"Correct message decrypted (regardless of error flag during decryption), and verification of deletion certificate passed : {doubly_correct_string} ({percent_string})"
         return output_string
 
     def export_to_folder(self, qubit_list: Optional[List[List[Nduv]]]) -> None:
