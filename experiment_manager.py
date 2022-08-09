@@ -1,6 +1,6 @@
 """A class representing a set of experiments that are run for data collection."""
 from math import ceil
-from typing import List, Optional, cast
+from typing import List, Optional, Union, cast
 from qiskit import QuantumCircuit
 from qiskit.circuit import Delay
 from encryption_circuit import encrypt
@@ -62,7 +62,7 @@ class ExperimentManager:
                 results.get_memory(i) for i in range(circuit_index, circuit_index + experiment.number_of_circuits)]))
             circuit_index += experiment.number_of_circuits
 
-    def process_counts(self, shots: int, memory: List[List[str]]) -> Counter[str]:
+    def process_counts(self, shots: int, memory: List[List[str]]) -> "Counter[str]":
         """Returns the measurements, in the appropriate format, for a single test of an experiment.
 
         Args:
@@ -81,7 +81,7 @@ class ExperimentManager:
                              for circuit in memory))
         return Counter(shot_list)
 
-    def set_up_experiments(self, num_experiments: int, experiment_properties: ExperimentProperties | List[ExperimentProperties],  scheme_parameters: SchemeParameters, folder_prefix: str, base_id: str, base_experiment: Optional[Experiment] = None):
+    def set_up_experiments(self, num_experiments: int, experiment_properties: Union[ExperimentProperties, List[ExperimentProperties]],  scheme_parameters: SchemeParameters, folder_prefix: str, base_id: str, base_experiment: Optional[Experiment] = None):
         """Creates the set of experiments that this object will manage.
 
         Args:

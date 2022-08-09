@@ -80,6 +80,8 @@ class Experiment:
         output_string += f"Total number of qubits: {self.scheme_parameters.m}\n"
         output_string += f"Qubits for deletion: {self.scheme_parameters.k}\n"
         output_string += f"Qubits used for message encryption: {self.scheme_parameters.s}\n"
+        output_string += f"Error syndrome length: {self.scheme_parameters.mu}\n"
+        output_string += f"Error-correcting code: {self.scheme_parameters.error_correcting_code_name}\n"
         output_string += f"Delay between qubit preparation and first measurement: {self.experiment_properties.microsecond_delay} us\n"
         output_string += f"Optimization level: {self.experiment_properties.optimization_level}"
         return output_string

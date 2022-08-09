@@ -3,7 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import List, Optional, Tuple, cast
+from typing import List, Optional, Tuple, Type, cast
 from qiskit import QuantumCircuit
 from qiskit.circuit import qpy_serialization
 from utils import random_bit_string, random_bit_matrix, random_int
@@ -43,7 +43,7 @@ class Key:
     error_correction_matrix: List[List[int]]
 
     @classmethod
-    def generate_key(cls, scheme_params: SchemeParameters) -> Key:
+    def generate_key(cls: Type[Key], scheme_params: SchemeParameters) -> Key:
         """Generates a key according to the global paramaters scheme_params."""
         def generate_basis() -> Tuple[Basis]:
             """Generates the basis with which to encode a sequence of qubits."""
@@ -80,7 +80,7 @@ class Key:
         return json.dumps(vars(self))
 
     @classmethod
-    def from_json(cls, json_string: str) -> Key:
+    def from_json(cls: Type[Key], json_string: str) -> Key:
         """Returns a Key based on the encoded JSON string."""
         dictionary = json.loads(json_string)
         return cls(
