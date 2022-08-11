@@ -55,16 +55,6 @@ def hamming_distance(s1: str, s2: str) -> int:
     return hamming_weight(xor(s1, s2))
 
 
-def xor_multiply_matrix_with_bit_string(matrix: List[List[int]], bit_string: str) -> str:
-    """Multiplies a matrix (mod 2) with a bit string, returning a string, as described in family H_3 identified in CW79."""
-    list_to_xor = ["0" * len(matrix)]
-    for i in range(len(bit_string)):
-        if bit_string[i] == "1":
-            list_to_xor.append("".join(str(digit)
-                               for digit in [row[i] for row in matrix]))
-    return xor(*list_to_xor)
-
-
 def multiply_bit_string_with_matrix(bit_string: str, matrix: List[List[int]]):
     return "".join(
         str(i % 2) for i in np.matmul(

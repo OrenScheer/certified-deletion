@@ -1,7 +1,7 @@
 """The circuit and associated methods used by the sending party to encrypt a plaintext."""
 
 from typing import List, Tuple
-from utils import random_bit_string, xor, xor_multiply_matrix_with_bit_string
+from utils import random_bit_string, xor, multiply_bit_string_with_matrix
 from scheme_parameters import SchemeParameters
 from states import Basis, Key, Ciphertext
 from qiskit import QuantumCircuit
@@ -108,7 +108,7 @@ def calculate_privacy_amplification_hash(matrix: List[List[int]], inp: str) -> s
     Returns:
         A privacy-amplified string of length n.
     """
-    return xor_multiply_matrix_with_bit_string(matrix, inp)
+    return multiply_bit_string_with_matrix(inp, matrix)
 
 
 def calculate_error_correction_hash(matrix: List[List[int]], inp: str) -> str:
@@ -123,4 +123,4 @@ def calculate_error_correction_hash(matrix: List[List[int]], inp: str) -> str:
         A string of length tau, the hash of the input string.
     """
     # inp is of length s, returns string of length tau
-    return xor_multiply_matrix_with_bit_string(matrix, inp)
+    return multiply_bit_string_with_matrix(inp, matrix)

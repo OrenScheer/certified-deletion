@@ -61,9 +61,9 @@ class Key:
         e = random_bit_string(scheme_params.mu)
 
         privacy_amplification_matrix = random_bit_matrix(
-            scheme_params.n, scheme_params.s)
+            scheme_params.s, scheme_params.n)
         error_correction_matrix = random_bit_matrix(
-            scheme_params.tau, scheme_params.s)
+            scheme_params.s, scheme_params.tau)
 
         return cls(
             theta=theta,
