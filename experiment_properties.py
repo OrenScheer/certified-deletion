@@ -21,7 +21,7 @@ class ExperimentProperties:
     execution_datetime: datetime
     shots: int
     system: str
-    microsecond_delay: int
+    microsecond_delay: float
     optimization_level: int
     qubits_per_circuit: int
     experiment_id: str = ""
