@@ -9,7 +9,7 @@ from qiskit.providers.ibmq.managed import ManagedResults
 from collections import Counter
 from experiment_properties import ExperimentProperties
 from scheme_parameters import SchemeParameters
-from states import Key
+from states import Key, Ciphertext
 from utils import random_bit_string
 
 
@@ -107,15 +107,19 @@ class ExperimentManager:
                 scheme_parameters = base_experiment.scheme_parameters
                 key = base_experiment.key
                 message = base_experiment.message
-                ciphertext = base_experiment.ciphertext
                 encoded_in_qubits = base_experiment.encoded_in_qubits
-                for circuit in ciphertext.circuits:
+                new_ciphertext_circuits = []
+                for circuit in base_experiment.ciphertext.circuits:
                     # Remove any existing delay in case it is of a different length than the current properties
-                    circuit.data = [instruction for instruction in circuit.data if not isinstance(
+                    new_circuit = circuit.copy()
+                    new_circuit.data = [instruction for instruction in new_circuit.data if not isinstance(
                         instruction[0], Delay)]
                     if specific_exp_properties.microsecond_delay > 0:
-                        circuit.delay(specific_exp_properties.microsecond_delay, range(
-                            circuit.num_qubits), unit="us")
+                        new_circuit.delay(specific_exp_properties.microsecond_delay, range(
+                            new_circuit.num_qubits), unit="us")
+                    new_ciphertext_circuits.append(new_circuit)
+                ciphertext = Ciphertext(circuits=new_ciphertext_circuits, c=base_experiment.ciphertext.c,
+                                        p=base_experiment.ciphertext.p, q=base_experiment.ciphertext.q)
             else:
                 # Create new states
                 key = Key.generate_key(scheme_parameters)
