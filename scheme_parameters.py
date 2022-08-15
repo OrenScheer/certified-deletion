@@ -24,7 +24,7 @@ class SchemeParameters:
     """
     security_parameter_lambda: float
     n: int
-    m: int
+    m: int = field(init=False)
     k: int
     s: int
     tau: int
@@ -36,59 +36,13 @@ class SchemeParameters:
     H_transpose: List[List[int]] = field(init=False)
 
     def __post_init__(self):
+        self.m = self.k + self.s
         with open(f"error_correcting_codes/{self.error_correcting_code_name}_parity_check_matrix.txt", "r") as f:
             self.parity_check_matrix = json.load(f)
         with open(f"error_correcting_codes/{self.error_correcting_code_name}_table.txt", "r") as f:
             self.syndrome_table = json.load(f)
         self.H_transpose = [[row[j] for row in self.parity_check_matrix]
                             for j in range(len(self.parity_check_matrix[0]))]
-
-    @classmethod
-    def generate_from_lambda(cls, security_parameter_lambda: float) -> SchemeParameters:
-        """Generates a SchemeParameters object based on a security parameter."""
-        def calculate_n() -> int:
-            """Returns the length of the message."""
-            return 8
-
-        def calculate_m() -> int:
-            """Returns the total number of qubits."""
-            return calculate_s() + calculate_k()
-
-        def calculate_k() -> int:
-            """Returns the number of qubits used for deletion."""
-            return 714
-
-        def calculate_s() -> int:
-            """Returns the number of qubits used as a one-time pad for encryption."""
-            return 150
-
-        def calculate_tau() -> int:
-            """Returns the length of the error correction hash."""
-            return 0
-
-        def calculate_mu() -> int:
-            """Returns the length of the error syndromes."""
-            return 40
-
-        def calculate_delta() -> float:
-            """Returns the threshold rate for the verification check."""
-            return 0.05
-
-        def get_error_correcting_code_name() -> str:
-            """Returns the name of the error correcting code."""
-            return "hamming_4"
-
-        return cls(
-            security_parameter_lambda=security_parameter_lambda,
-            n=calculate_n(),
-            m=calculate_m(),
-            k=calculate_k(),
-            s=calculate_s(),
-            tau=calculate_tau(),
-            mu=calculate_mu(),
-            delta=calculate_delta(),
-            error_correcting_code_name=get_error_correcting_code_name()
-        )
 
     def get_expected_test1_success_rate(self, error_rate: float = 0) -> float:
         """Returns the expected (noise-free) success percentage for test1."""
@@ -179,7 +133,6 @@ class SchemeParameters:
         return cls(
             security_parameter_lambda=dictionary["security_parameter_lambda"],
             n=dictionary["n"],
-            m=dictionary["m"],
             k=dictionary["k"],
             s=dictionary["s"],
             tau=dictionary["tau"],
@@ -187,3 +140,15 @@ class SchemeParameters:
             delta=dictionary["delta"],
             error_correcting_code_name=dictionary["error_correcting_code_name"],
         )
+
+
+byte_hamming_4 = SchemeParameters(
+    security_parameter_lambda=1,
+    n=8,
+    k=714,
+    s=150,
+    tau=0,
+    mu=40,
+    delta=0.05,
+    error_correcting_code_name="hamming_4",
+)
