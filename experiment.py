@@ -95,7 +95,7 @@ class Experiment:
         )
         return (accepted_count / self.experiment_properties.shots) * 100
 
-    def get_test2_success_rate(self, error_correct=False) -> float:
+    def get_test2_success_rate(self, error_correct=True) -> float:
         """Returns the percentage of successful decryptions for test2."""
         success_with_flag, success_no_flag, _, _ = decrypt_results(
             self.decryption_counts_test2, self.key, self.ciphertext, self.message, self.scheme_parameters, error_correct)
@@ -313,7 +313,7 @@ class Experiment:
                 qubit_list, f"{self.folder_path}/{qubit_properties_filename}")
 
     @classmethod
-    def reconstruct_experiment_from_folder(cls, folder_path: str) -> Experiment:
+    def reconstruct_experiment_from_folder(cls, folder_path: str, include_circuits: bool = True) -> Experiment:
         """Returns an Experiment based on the files stored in the folder folder_path."""
         with open(f"{folder_path}/{experiment_properties_filename}", "r") as properties_file:
             experiment_properties = ExperimentProperties.from_json(
@@ -324,25 +324,29 @@ class Experiment:
             key = Key.from_json(key_file.read())
         with open(f"{folder_path}/{ciphertext_filename}", "r") as ciphertext_file:
             ciphertext = Ciphertext.from_json(
-                ciphertext_file.read(), qpy_filename=f"{folder_path}/{circuits_folder}/{base_circuits_filename}")
+                ciphertext_file.read(), qpy_filename=f"{folder_path}/{circuits_folder}/{base_circuits_filename}" if include_circuits else None)
         with open(f"{folder_path}/{message_filename}", "r") as message_file:
             message = message_file.read()
         with open(f"{folder_path}/{encoded_filename}", "r") as encoded_file:
             encoded_in_qubits = encoded_file.read()
 
-        with open(f"{folder_path}/{circuits_folder}/{base_circuits_filename}", "rb") as f:
-            base_circuits = cast(List[QuantumCircuit],
-                                 qpy_serialization.load(f))
+        base_circuits = []
+        if include_circuits:
+            with open(f"{folder_path}/{circuits_folder}/{base_circuits_filename}", "rb") as f:
+                base_circuits = cast(List[QuantumCircuit],
+                                     qpy_serialization.load(f))
 
         full_circuits = []
-        for i, filename in enumerate(full_circuit_filenames):
-            with open(f"{folder_path}/{circuits_folder}/{filename}", "rb") as f:
-                full_circuits.append(qpy_serialization.load(f))
+        if include_circuits:
+            for i, filename in enumerate(full_circuit_filenames):
+                with open(f"{folder_path}/{circuits_folder}/{filename}", "rb") as f:
+                    full_circuits.append(qpy_serialization.load(f))
 
         transpiled_circuits = []
-        for i, filename in enumerate(transpiled_circuit_filenames):
-            with open(f"{folder_path}/{circuits_folder}/{filename}", "rb") as f:
-                transpiled_circuits.append(qpy_serialization.load(f))
+        if include_circuits:
+            for i, filename in enumerate(transpiled_circuit_filenames):
+                with open(f"{folder_path}/{circuits_folder}/{filename}", "rb") as f:
+                    transpiled_circuits.append(qpy_serialization.load(f))
 
         deletion_counts_test1 = import_counts(
             f"{folder_path}/{test1_filename}")

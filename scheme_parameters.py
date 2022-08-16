@@ -1,4 +1,4 @@
-"""The parameters of a given certified deletion scheme, including the chosen error correction scheme."""
+"""The parameters of a given certified deletion scheme, including the chosen error correction scheme. This module also contains preset parameter sets."""
 
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -151,4 +151,15 @@ byte_hamming_4 = SchemeParameters(
     mu=40,
     delta=0.05,
     error_correcting_code_name="hamming_4",
+)
+
+byte_rm_4_7 = SchemeParameters(
+    security_parameter_lambda=1,
+    n=8,
+    k=736,
+    s=128,
+    tau=0,
+    mu=29,
+    delta=0.05,
+    error_correcting_code_name="reed_muller_4_7"
 )
