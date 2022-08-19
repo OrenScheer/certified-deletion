@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import os
 import pandas as pd
-from typing import List, Optional, Dict, cast
+from typing import List, Optional, Dict, Tuple, cast
 from qiskit import QuantumCircuit
 from experiment_properties import ExperimentProperties
 from states import Ciphertext, Key
@@ -97,10 +97,14 @@ class Experiment:
 
     def get_test2_success_rate(self, error_correct=True) -> float:
         """Returns the percentage of successful decryptions for test2."""
-        success_with_flag, success_no_flag, _, _ = decrypt_results(
-            self.decryption_counts_test2, self.key, self.ciphertext, self.message, self.scheme_parameters, error_correct)
+        success_with_flag, success_no_flag, _, _ = self.get_full_test2_reuslts(
+            error_correct=error_correct)
         correct_decryption_count = success_no_flag + success_with_flag
         return (correct_decryption_count / self.experiment_properties.shots) * 100
+
+    def get_full_test2_reuslts(self, error_correct=True) -> Tuple[int, int, int, int]:
+        """Returns the four counts from test 2."""
+        return decrypt_results(self.decryption_counts_test2, self.key, self.ciphertext, self.message, self.scheme_parameters, error_correct)
 
     def run_test_1(self) -> str:
         """Runs a test of honest deletion."""
