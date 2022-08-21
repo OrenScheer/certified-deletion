@@ -85,6 +85,7 @@ class SchemeParameters:
         return expected_decryption_range, expected_deletion_success
 
     def synd(self, inp: str) -> str:
+        """Returns the syndrome of a given input string, possibly in blocks.."""
         codeword_length = len(self.H_transpose)
         ans = ""
         for i in range(0, len(inp), codeword_length):
@@ -92,7 +93,21 @@ class SchemeParameters:
                 inp[i:i+codeword_length], self.H_transpose)
         return ans
 
-    def corr(self, inp: str, syndrome: str) -> str:
+    def corr(self, inp: str, syndrome: str) -> Tuple[str, bool]:
+        """Corrects a possibly erroneous string given the syndrome of the initial string.
+
+        The input string and syndrome might be encoded in blocks.
+
+        Args:
+            inp: The string, possibly containing errors, to correct.
+            syndrome: The error syndrome of the original string.
+
+        Returns:
+            A tuple (corrected_string, error_flag) of a string and a boolean, where corrected_string
+            is the string resulting from using the syndrome to correct the input string, and error_flag
+            is True if the error-correcting code detected but could not fix errors.
+        """
+        error_correction_succeeded = True
         codeword_length = len(self.H_transpose)
         syndrome_length = len(self.H_transpose[0])
         ans = ""
@@ -102,21 +117,34 @@ class SchemeParameters:
             syndrome_length, len(syndrome) + 1, syndrome_length)]
         codeword_start = syndrome_start = 0
         for codeword_end, syndrome_end in zip(codeword_indices, syndrome_indices):
-            ans += self.corr_single_block(inp[codeword_start:codeword_end],
-                                          syndrome[syndrome_start:syndrome_end])
+            corrected_block, correction_succeeded = self.corr_single_block(
+                inp[codeword_start:codeword_end], syndrome[syndrome_start:syndrome_end])
+            error_correction_succeeded = error_correction_succeeded and correction_succeeded
+            ans += corrected_block
             codeword_start = codeword_end
             syndrome_start = syndrome_end
-        return ans
+        return ans, error_correction_succeeded
 
-    def corr_single_block(self, inp: str, syndrome: str) -> str:
+    def corr_single_block(self, inp: str, syndrome: str) -> Tuple[str, bool]:
+        """Corrects a single block of a possibly erroneous string, given the syndrome of the initial string.
+
+        Args:
+            inp: The string, possibly containing errors, to correct.
+            syndrome: The error syndrome of the original string.
+
+        Returns:
+            A tuple (corrected_string, error_flag) of a string and a boolean, where corrected_string
+            is the string resulting from using the syndrome to correct the input string, and error_flag
+            is True if the error-correcting code detected but could not fix errors.
+        """
         new_syndrome = xor(multiply_bit_string_with_matrix(
             inp, self.H_transpose), syndrome)
         if new_syndrome in self.syndrome_table:
             error_vector = self.syndrome_table[new_syndrome]
-            return xor(inp, error_vector)
+            return xor(inp, error_vector), True
         else:
             # Correction failed, return original string
-            return inp
+            return inp, False
 
     def to_json(self) -> str:
         """Returns a JSON string representing this object."""

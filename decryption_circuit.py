@@ -73,7 +73,8 @@ def decrypt_single_result(measurement: str, key: Key, ciphertext: Ciphertext, me
     Returns:
         A tuple of two boolean values (successful_decryption, error_flag), where successful_decryption
         is True if following the decryption procuedure resulted in recovering the correct plaintext,
-        and where error_flag is True if the error correction hash did not match.
+        and where error_flag is True if the error correction hash did not match or the error-correcting
+        code detected but could not fix errors.
     """
     if len(measurement) == key.theta.count(Basis.COMPUTATIONAL):
         # Only the computational basis qubits were measured
@@ -83,11 +84,13 @@ def decrypt_single_result(measurement: str, key: Key, ciphertext: Ciphertext, me
         relevant_bits = "".join(
             [ch for i, ch in enumerate(measurement) if key.theta[i] is Basis.COMPUTATIONAL])
     if error_correct:
-        relevant_bits = scheme_parameters.corr(
+        relevant_bits, error_correction_succeeded = scheme_parameters.corr(
             relevant_bits, xor(ciphertext.q, key.e))
+    else:
+        error_correction_succeeded = False
     error_correction_hash = xor(calculate_error_correction_hash(
         key.error_correction_matrix, relevant_bits), key.d)
-    error_flag = error_correction_hash != ciphertext.p
+    error_flag = error_correction_hash != ciphertext.p or not error_correction_succeeded
     x_prime = calculate_privacy_amplification_hash(
         key.privacy_amplification_matrix, relevant_bits)
     decrypted_string = xor(ciphertext.c, x_prime, key.u)

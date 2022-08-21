@@ -7,10 +7,11 @@ import pandas as pd
 from typing import List, Optional, Dict, Tuple, cast
 from qiskit import QuantumCircuit
 from experiment_properties import ExperimentProperties
-from states import Ciphertext, Key
+from states import Ciphertext, Key, Basis
 from scheme_parameters import SchemeParameters
 from decryption_circuit import decrypt_results
 from verification_circuit import verify_deletion_counts
+from utils import hamming_distance
 from qiskit.circuit import qpy_serialization
 from qiskit.providers.models.backendproperties import Nduv
 from math import ceil
@@ -262,6 +263,23 @@ class Experiment:
         percent_string = f"{(doubly_correct_count / self.experiment_properties.shots)*100}%"
         output_string += f"Correct message decrypted (regardless of error flag during decryption), and verification of deletion certificate passed : {doubly_correct_string} ({percent_string})"
         return output_string
+
+    def get_average_error_rate(self, basis: Basis) -> float:
+        """Returns the average error rate of a chosen basis for this experiment."""
+        index_set = set(i for i in range(len(self.encoded_in_qubits))
+                        if self.key.theta[i] is basis)
+        total_error_rate = 0
+        expected_qubits = "".join(
+            [self.encoded_in_qubits[i] for i in range(len(self.encoded_in_qubits)) if i in index_set])
+        if basis is Basis.COMPUTATIONAL:
+            counts = self.decryption_counts_test2
+        else:
+            counts = self.deletion_counts_test1
+        for meas, count in counts.items():
+            for _ in range(count):
+                total_error_rate += hamming_distance("".join([meas[i] for i in range(
+                    len(meas)) if i in index_set]), expected_qubits)/len(index_set)
+        return total_error_rate/self.experiment_properties.shots
 
     def export_to_folder(self, qubit_list: Optional[List[List[Nduv]]]) -> None:
         """Exports the values and results of this Experiment to a folder."""
